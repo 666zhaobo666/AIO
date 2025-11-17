@@ -164,7 +164,6 @@
                                 <interfaceOnly>true</interfaceOnly>
                                 <useSpringBoot3>true</useSpringBoot3>
                                 <useTags>true</useTags>
-                                <!-- Ensure API interfaces are suffixed with 'Api', so a 'User' tag -> 'UserApi' -->
                                 <apiNameSuffix>Api</apiNameSuffix>
                             </configOptions>
                         </configuration>
