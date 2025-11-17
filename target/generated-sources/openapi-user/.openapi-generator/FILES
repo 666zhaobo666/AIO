@@ -1,9 +1,0 @@
-README.md
-pom.xml
-src/main/java/com/aio/api/user/ApiUtil.java
-src/main/java/com/aio/api/user/UserApi.java
-src/main/java/com/aio/api/user/model/LoginResponse.java
-src/main/java/com/aio/api/user/model/ModelApiResponse.java
-src/main/java/com/aio/api/user/model/UpdatePasswordRequest.java
-src/main/java/com/aio/api/user/model/UserLoginRequest.java
-src/main/java/com/aio/api/user/model/UserRegisterRequest.java
