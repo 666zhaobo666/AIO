@@ -164,6 +164,8 @@
                                 <interfaceOnly>true</interfaceOnly>
                                 <useSpringBoot3>true</useSpringBoot3>
                                 <useTags>true</useTags>
+                                <!-- Ensure API interfaces are suffixed with 'Api', so a 'User' tag -> 'UserApi' -->
+                                <apiNameSuffix>Api</apiNameSuffix>
                             </configOptions>
                         </configuration>
                     </execution>
@@ -171,5 +173,20 @@
             </plugin>
 		</plugins>
 	</build>
+
+	<!-- Add an optional Maven profile for SonarCloud (non-sensitive values only).
+	     Do NOT put tokens here. Provide tokens via CLI (-Dsonar.login=TOKEN) or CI secrets. -->
+	<profiles>
+		<profile>
+			<id>sonarcloud</id>
+			<properties>
+				<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+				<!-- Optionally set non-sensitive keys here:
+				<sonar.organization>YOUR_ORG</sonar.organization>
+				<sonar.projectKey>YOUR_PROJECT_KEY</sonar.projectKey>
+				-->
+			</properties>
+		</profile>
+	</profiles>
 
 </project>
