@@ -1,0 +1,47 @@
+AIO/  // 项目根目录
+├── pom.xml                          // Maven依赖配置（管理所有依赖）
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/
+│   │   │       └── aio/             // 根包：com.aio
+│   │   │           ├── AioApplication.java  // 主启动类
+│   │   │           ├── common/      // 全局公共组件（所有模块共享）
+│   │   │           │   ├── config/  // 全局配置（如Spring Security、JPA、OpenAPI等）
+│   │   │           │   ├── constant/  // 全局常量（通用状态码、正则等）
+│   │   │           │   ├── exception/  // 全局异常（通用异常类、全局异常处理器）
+│   │   │           │   ├── model/   // 公共数据模型（分页、响应体、基础实体等）
+│   │   │           │   └── util/    // 全局工具类（加密、校验、日期等）
+│   │   │           ├── module/      // 业务模块总入口（模块间物理隔离）
+│   │   │           │   ├── user/    // 用户模块（登录、注册等公共业务）
+│   │   │           │   │   ├── controller/  // 用户接口实现
+│   │   │           │   │   ├── service/     // 用户业务逻辑（接口+实现，如UserService + UserServiceImpl）
+│   │   │           │   │   ├── repository/  // 用户数据访问（与PostgreSQL交互）
+│   │   │           │   │   └── model/       // 用户数据模型（如User实体、登录参数等）
+│   │   │           │   └── onlineTools/    // 在线工具模块（当前核心业务）
+│   │   │           │       ├── controller/  // 工具接口实现
+│   │   │           │       ├── service/     // 工具业务逻辑（接口+实现）
+│   │   │           │       ├── repository/  // 工具数据访问
+│   │   │           │       └── model/       // 工具数据模型（如工具定义、调用记录等）
+│   │   │           │       // 未来扩展模块直接在此新增，如：
+│   │   │           │       // ├── social/   // 社交模块
+│   │   │           │       // ├── pay/     // 支付模块
+│   │   │           │       // ...
+│   │   │           └── api/         // OpenAPI生成的接口和模型（自动生成，不手动修改）
+│   │   │               ├── user/    // 用户模块API生成代码
+│   │   │               └── onlineTools/    // 工具模块API生成代码
+│   │   └── resources/
+│   │       ├── application.yml      // 主配置文件（数据库连接、端口、日志等）
+│   │       ├── application-dev.yml  // 开发环境配置
+│   │       ├── application-prod.yml // 生产环境配置
+│   │       └── openapi/             // OpenAPI定义（XML格式，按模块区分）
+│   │           ├── user-api.xml     // 用户模块API定义
+│   │           └── onlineTools-api.xml     // 工具模块API定义
+│   └── test/                         // 测试代码（结构与main对应）
+│       └── java/
+│           └── com/
+│               └── aio/
+│                   ├── common/
+│                   └── module/
+├── .gitignore                       // Git忽略文件
+└── README.md                        // 项目说明
