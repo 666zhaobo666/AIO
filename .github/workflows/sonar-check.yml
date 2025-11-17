@@ -1,0 +1,27 @@
+name: SonarQube Check
+
+on:
+  pull_request:
+    branches: [ main ]  # 仅在PR到main分支时触发
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取所有历史，确保Sonar能分析完整提交
+
+      - name: 设置JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: 25
+          distribution: 'temurin'
+          cache: maven
+
+      - name: 运行SonarQube分析
+        run: mvn verify sonar:sonar \
+          -Dsonar.projectKey=aio-platform \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }}
