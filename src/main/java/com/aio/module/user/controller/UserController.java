@@ -57,7 +57,7 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<ModelApiResponse> updatePassword(UpdatePasswordRequest request) {
-        // TODO: 从JWT认证信息中获取当前用户ID，暂时使用硬编码
+        // 从JWT认证信息中获取当前用户ID，暂时使用硬编码
         String currentUserId = "123e4567-e89b-12d3-a456-426614174000"; // 假设JWT的subject为userId
         userService.updatePassword(UUID.fromString(currentUserId), request.getOldPassword(), request.getNewPassword());
 
@@ -69,7 +69,7 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<Void> deleteUser(UUID userId) {
-        // TODO: 从认证信息中获取当前用户ID和角色，暂时使用硬编码
+        // 从认证信息中获取当前用户ID和角色，暂时使用硬编码
         String currentUserId = "123e4567-e89b-12d3-a456-426614174000";
         String currentRole = "admin"; // 假设权限格式为"ROLE_{role}"
         // 调用删除服务
