@@ -85,10 +85,11 @@ public class UpdatePasswordRequest {
 
   @Override
   public String toString() {
-      return "class UpdatePasswordRequest {\n" +
-              "    oldPassword: " + "*" + "\n" +
-              "    newPassword: " + "*" + "\n" +
-              "}";
+      return """
+              class UpdatePasswordRequest {
+                  oldPassword: *
+                  newPassword: *
+              }""";
   }
 
   /**

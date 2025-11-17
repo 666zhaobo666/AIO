@@ -111,14 +111,12 @@ public class LoginResponse {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("class LoginResponse {\n");
-    sb.append("    token: ").append(toIndentedString(token)).append("\n");
-    sb.append("    userId: ").append(toIndentedString(userId)).append("\n");
-    sb.append("    username: ").append(toIndentedString(username)).append("\n");
-    sb.append("    role: ").append(toIndentedString(role)).append("\n");
-    sb.append("}");
-    return sb.toString();
+      return "class LoginResponse {\n" +
+              "    token: " + toIndentedString(token) + "\n" +
+              "    userId: " + toIndentedString(userId) + "\n" +
+              "    username: " + toIndentedString(username) + "\n" +
+              "    role: " + toIndentedString(role) + "\n" +
+              "}";
   }
 
   /**

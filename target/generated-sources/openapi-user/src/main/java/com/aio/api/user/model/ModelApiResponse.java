@@ -93,13 +93,11 @@ public class ModelApiResponse {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("class ModelApiResponse {\n");
-    sb.append("    code: ").append(toIndentedString(code)).append("\n");
-    sb.append("    message: ").append(toIndentedString(message)).append("\n");
-    sb.append("    data: ").append(toIndentedString(data)).append("\n");
-    sb.append("}");
-    return sb.toString();
+      return "class ModelApiResponse {\n" +
+              "    code: " + toIndentedString(code) + "\n" +
+              "    message: " + toIndentedString(message) + "\n" +
+              "    data: " + toIndentedString(data) + "\n" +
+              "}";
   }
 
   /**

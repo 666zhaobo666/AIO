@@ -85,12 +85,10 @@ public class UserLoginRequest {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("class UserLoginRequest {\n");
-    sb.append("    account: ").append(toIndentedString(account)).append("\n");
-    sb.append("    password: ").append("*").append("\n");
-    sb.append("}");
-    return sb.toString();
+      return "class UserLoginRequest {\n" +
+              "    account: " + toIndentedString(account) + "\n" +
+              "    password: " + "*" + "\n" +
+              "}";
   }
 
   /**

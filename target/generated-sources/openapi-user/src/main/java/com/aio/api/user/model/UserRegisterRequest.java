@@ -43,7 +43,7 @@ public class UserRegisterRequest {
     
     U("U");
 
-    private String value;
+    private final String value;
 
     GenderEnum(String value) {
       this.value = value;
@@ -264,19 +264,17 @@ public class UserRegisterRequest {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("class UserRegisterRequest {\n");
-    sb.append("    username: ").append(toIndentedString(username)).append("\n");
-    sb.append("    name: ").append(toIndentedString(name)).append("\n");
-    sb.append("    email: ").append(toIndentedString(email)).append("\n");
-    sb.append("    phone: ").append(toIndentedString(phone)).append("\n");
-    sb.append("    password: ").append("*").append("\n");
-    sb.append("    gender: ").append(toIndentedString(gender)).append("\n");
-    sb.append("    birthday: ").append(toIndentedString(birthday)).append("\n");
-    sb.append("    occupation: ").append(toIndentedString(occupation)).append("\n");
-    sb.append("    signature: ").append(toIndentedString(signature)).append("\n");
-    sb.append("}");
-    return sb.toString();
+      return "class UserRegisterRequest {\n" +
+              "    username: " + toIndentedString(username) + "\n" +
+              "    name: " + toIndentedString(name) + "\n" +
+              "    email: " + toIndentedString(email) + "\n" +
+              "    phone: " + toIndentedString(phone) + "\n" +
+              "    password: " + "*" + "\n" +
+              "    gender: " + toIndentedString(gender) + "\n" +
+              "    birthday: " + toIndentedString(birthday) + "\n" +
+              "    occupation: " + toIndentedString(occupation) + "\n" +
+              "    signature: " + toIndentedString(signature) + "\n" +
+              "}";
   }
 
   /**
