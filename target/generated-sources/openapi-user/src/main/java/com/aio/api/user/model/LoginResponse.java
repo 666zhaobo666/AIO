@@ -1,24 +1,19 @@
 package com.aio.api.user.model;
 
-import java.net.URI;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.UUID;
-import org.openapitools.jackson.nullable.JsonNullable;
-import java.time.OffsetDateTime;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-
-import java.util.*;
 import jakarta.annotation.Generated;
+import lombok.Setter;
 
 /**
  * LoginResponse
  */
 
+@Setter
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-11-17T00:13:03.771057300+08:00[Asia/Shanghai]")
 public class LoginResponse {
 
@@ -46,11 +41,7 @@ public class LoginResponse {
     return token;
   }
 
-  public void setToken(String token) {
-    this.token = token;
-  }
-
-  public LoginResponse userId(UUID userId) {
+    public LoginResponse userId(UUID userId) {
     this.userId = userId;
     return this;
   }
@@ -66,11 +57,7 @@ public class LoginResponse {
     return userId;
   }
 
-  public void setUserId(UUID userId) {
-    this.userId = userId;
-  }
-
-  public LoginResponse username(String username) {
+    public LoginResponse username(String username) {
     this.username = username;
     return this;
   }
@@ -86,11 +73,7 @@ public class LoginResponse {
     return username;
   }
 
-  public void setUsername(String username) {
-    this.username = username;
-  }
-
-  public LoginResponse role(String role) {
+    public LoginResponse role(String role) {
     this.role = role;
     return this;
   }
@@ -106,11 +89,7 @@ public class LoginResponse {
     return role;
   }
 
-  public void setRole(String role) {
-    this.role = role;
-  }
-
-  @Override
+    @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;

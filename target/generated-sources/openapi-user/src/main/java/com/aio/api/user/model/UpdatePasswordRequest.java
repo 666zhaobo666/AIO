@@ -7,11 +7,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 
 import jakarta.annotation.Generated;
+import lombok.Setter;
 
 /**
  * UpdatePasswordRequest
  */
 
+@Setter
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-11-17T00:13:03.771057300+08:00[Asia/Shanghai]")
 public class UpdatePasswordRequest {
 
@@ -47,11 +49,7 @@ public class UpdatePasswordRequest {
     return oldPassword;
   }
 
-  public void setOldPassword(String oldPassword) {
-    this.oldPassword = oldPassword;
-  }
-
-  public UpdatePasswordRequest newPassword(String newPassword) {
+    public UpdatePasswordRequest newPassword(String newPassword) {
     this.newPassword = newPassword;
     return this;
   }
@@ -67,11 +65,7 @@ public class UpdatePasswordRequest {
     return newPassword;
   }
 
-  public void setNewPassword(String newPassword) {
-    this.newPassword = newPassword;
-  }
-
-  @Override
+    @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
@@ -91,12 +85,10 @@ public class UpdatePasswordRequest {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("class UpdatePasswordRequest {\n");
-    sb.append("    oldPassword: ").append("*").append("\n");
-    sb.append("    newPassword: ").append("*").append("\n");
-    sb.append("}");
-    return sb.toString();
+      return "class UpdatePasswordRequest {\n" +
+              "    oldPassword: " + "*" + "\n" +
+              "    newPassword: " + "*" + "\n" +
+              "}";
   }
 
   /**

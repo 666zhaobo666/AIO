@@ -1,23 +1,19 @@
 package com.aio.api.user.model;
 
-import java.net.URI;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import org.openapitools.jackson.nullable.JsonNullable;
-import java.time.OffsetDateTime;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
-import java.util.*;
 import jakarta.annotation.Generated;
+import lombok.Setter;
 
 /**
  * UserLoginRequest
  */
 
+@Setter
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-11-17T00:13:03.771057300+08:00[Asia/Shanghai]")
 public class UserLoginRequest {
 
@@ -53,11 +49,7 @@ public class UserLoginRequest {
     return account;
   }
 
-  public void setAccount(String account) {
-    this.account = account;
-  }
-
-  public UserLoginRequest password(String password) {
+    public UserLoginRequest password(String password) {
     this.password = password;
     return this;
   }
@@ -73,11 +65,7 @@ public class UserLoginRequest {
     return password;
   }
 
-  public void setPassword(String password) {
-    this.password = password;
-  }
-
-  @Override
+    @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;

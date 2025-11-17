@@ -1,24 +1,19 @@
 package com.aio.api.user.model;
 
-import java.net.URI;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import org.openapitools.jackson.nullable.JsonNullable;
-import java.time.OffsetDateTime;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
-import java.util.*;
 import jakarta.annotation.Generated;
+import lombok.Setter;
 
 /**
  * ModelApiResponse
  */
 
+@Setter
 @JsonTypeName("ApiResponse")
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-11-17T00:13:03.771057300+08:00[Asia/Shanghai]")
 public class ModelApiResponse {
@@ -45,11 +40,7 @@ public class ModelApiResponse {
     return code;
   }
 
-  public void setCode(Integer code) {
-    this.code = code;
-  }
-
-  public ModelApiResponse message(String message) {
+    public ModelApiResponse message(String message) {
     this.message = message;
     return this;
   }
@@ -65,11 +56,7 @@ public class ModelApiResponse {
     return message;
   }
 
-  public void setMessage(String message) {
-    this.message = message;
-  }
-
-  public ModelApiResponse data(Object data) {
+    public ModelApiResponse data(Object data) {
     this.data = data;
     return this;
   }
@@ -85,11 +72,7 @@ public class ModelApiResponse {
     return data;
   }
 
-  public void setData(Object data) {
-    this.data = data;
-  }
-
-  @Override
+    @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;

@@ -1,26 +1,25 @@
 package com.aio.api.user.model;
 
-import java.net.URI;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.time.LocalDate;
+
+import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.openapitools.jackson.nullable.JsonNullable;
-import java.time.OffsetDateTime;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
-import java.util.*;
 import jakarta.annotation.Generated;
 
 /**
  * UserRegisterRequest
  */
 
+@Setter
 @Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2025-11-17T00:13:03.771057300+08:00[Asia/Shanghai]")
 public class UserRegisterRequest {
 
@@ -110,11 +109,7 @@ public class UserRegisterRequest {
     return username;
   }
 
-  public void setUsername(String username) {
-    this.username = username;
-  }
-
-  public UserRegisterRequest name(String name) {
+    public UserRegisterRequest name(String name) {
     this.name = name;
     return this;
   }
@@ -130,11 +125,7 @@ public class UserRegisterRequest {
     return name;
   }
 
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public UserRegisterRequest email(String email) {
+    public UserRegisterRequest email(String email) {
     this.email = email;
     return this;
   }
@@ -150,11 +141,7 @@ public class UserRegisterRequest {
     return email;
   }
 
-  public void setEmail(String email) {
-    this.email = email;
-  }
-
-  public UserRegisterRequest phone(String phone) {
+    public UserRegisterRequest phone(String phone) {
     this.phone = phone;
     return this;
   }
@@ -170,11 +157,7 @@ public class UserRegisterRequest {
     return phone;
   }
 
-  public void setPhone(String phone) {
-    this.phone = phone;
-  }
-
-  public UserRegisterRequest password(String password) {
+    public UserRegisterRequest password(String password) {
     this.password = password;
     return this;
   }
@@ -190,11 +173,7 @@ public class UserRegisterRequest {
     return password;
   }
 
-  public void setPassword(String password) {
-    this.password = password;
-  }
-
-  public UserRegisterRequest gender(GenderEnum gender) {
+    public UserRegisterRequest gender(GenderEnum gender) {
     this.gender = gender;
     return this;
   }
@@ -210,11 +189,7 @@ public class UserRegisterRequest {
     return gender;
   }
 
-  public void setGender(GenderEnum gender) {
-    this.gender = gender;
-  }
-
-  public UserRegisterRequest birthday(LocalDate birthday) {
+    public UserRegisterRequest birthday(LocalDate birthday) {
     this.birthday = birthday;
     return this;
   }
@@ -230,11 +205,7 @@ public class UserRegisterRequest {
     return birthday;
   }
 
-  public void setBirthday(LocalDate birthday) {
-    this.birthday = birthday;
-  }
-
-  public UserRegisterRequest occupation(String occupation) {
+    public UserRegisterRequest occupation(String occupation) {
     this.occupation = occupation;
     return this;
   }
@@ -250,11 +221,7 @@ public class UserRegisterRequest {
     return occupation;
   }
 
-  public void setOccupation(String occupation) {
-    this.occupation = occupation;
-  }
-
-  public UserRegisterRequest signature(String signature) {
+    public UserRegisterRequest signature(String signature) {
     this.signature = signature;
     return this;
   }
@@ -270,11 +237,7 @@ public class UserRegisterRequest {
     return signature;
   }
 
-  public void setSignature(String signature) {
-    this.signature = signature;
-  }
-
-  @Override
+    @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;
