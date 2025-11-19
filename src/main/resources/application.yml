@@ -13,9 +13,10 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect  # PostgreSQL方言
 
 # 服务器配置（公共部分）
-server:
-  servlet:
-    context-path: /api  # 应用上下文路径（默认/）
+# 注意：不要再设置 context-path，因为 OpenAPI 已经在路径中包含 /api 前缀
+# server:
+#   servlet:
+#     context-path: /
 
 # 自定义配置（如JWT、业务参数等）
 aio:

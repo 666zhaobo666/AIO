@@ -1,18 +1,22 @@
-# 开发环境端口（避免与生产冲突）
 server:
   port: 8080
 
-# 开发环境数据库配置（本地PostgreSQL）
+# 开发环境数据库配置（PostgreSQL）
 spring:
   datasource:
-    url: jdbc:postgresql://192.168.100.100:5433/aios  # 数据库地址（aio_dev为开发库名）
-    username: aios  # 数据库用户名
-    password: zb729927  # 数据库密码
+    url: jdbc:postgresql://db.cccg.top:5433/aios  # 数据库地址（aio_dev为开发库名）
+    username: ${DB_USERNAME:aios}
+    password: ${DB_PASSWORD:zb729927}
     driver-class-name: org.postgresql.Driver  # PostgreSQL驱动
   jpa:
     hibernate:
       ddl-auto: update  # 开发环境自动更新表结构（生产环境禁用）
     show-sql: true  # 开发环境打印SQL（方便调试）
+
+aio:
+  jwt:
+    secret: aio-platform-jwt-secret-key-1234567890  # JWT密钥（生产环境务必更换）
+    expire-days: 7  # 令牌过期天数
 
 # 日志配置（开发环境日志级别更详细）
 logging:

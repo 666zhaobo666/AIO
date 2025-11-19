@@ -17,7 +17,7 @@ public class UserEntity {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column(name = "displayname", nullable = false)
     private String name;
 
     @Column(unique = true, nullable = false)
@@ -34,7 +34,7 @@ public class UserEntity {
 
     private String signature;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password", nullable = false)
     private String passwordHash;
 
     @Column(nullable = false)

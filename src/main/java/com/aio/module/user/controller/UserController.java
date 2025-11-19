@@ -6,9 +6,10 @@ import com.aio.api.user.model.LoginResponse;
 import com.aio.api.user.model.UpdatePasswordRequest;
 import com.aio.api.user.model.UserLoginRequest;
 import com.aio.api.user.model.UserRegisterRequest;
+import com.aio.common.security.SecurityContextUtils;
 import com.aio.module.user.entity.UserEntity;
 import com.aio.module.user.service.UserService;
-import com.aio.common.util.JwtUtils; // 自定义JWT工具类
+import com.aio.common.util.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,9 +58,15 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<ModelApiResponse> updatePassword(UpdatePasswordRequest request) {
-        // 从JWT认证信息中获取当前用户ID，暂时使用硬编码
-        String currentUserId = "123e4567-e89b-12d3-a456-426614174000"; // 假设JWT的subject为userId
-        userService.updatePassword(UUID.fromString(currentUserId), request.getOldPassword(), request.getNewPassword());
+        // 从JWT认证上下文中获取当前用户ID
+        UUID currentUserId = SecurityContextUtils.getCurrentUserId();
+        if (currentUserId == null) {
+            ModelApiResponse response = new ModelApiResponse();
+            response.setCode(401);
+            response.setMessage("未认证或认证已过期");
+            return ResponseEntity.status(401).body(response);
+        }
+        userService.updatePassword(currentUserId, request.getOldPassword(), request.getNewPassword());
 
         ModelApiResponse response = new ModelApiResponse();
         response.setCode(200);
@@ -69,11 +76,15 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<Void> deleteUser(UUID userId) {
-        // 从认证信息中获取当前用户ID和角色，暂时使用硬编码
-        String currentUserId = "123e4567-e89b-12d3-a456-426614174000";
-        String currentRole = "admin"; // 假设权限格式为"ROLE_{role}"
+        // 从JWT认证上下文中获取当前用户ID和角色
+        UUID currentUserId = SecurityContextUtils.getCurrentUserId();
+        String currentRole = SecurityContextUtils.getCurrentUserRole();
+        if (currentUserId == null || currentRole == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         // 调用删除服务
-        userService.deleteUser(userId, UUID.fromString(currentUserId), currentRole);
+        userService.deleteUser(userId, currentUserId, currentRole);
         return ResponseEntity.noContent().build();
     }
 }
