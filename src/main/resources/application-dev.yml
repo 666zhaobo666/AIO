@@ -5,8 +5,8 @@ server:
 spring:
   datasource:
     url: jdbc:postgresql://db.cccg.top:5433/aios  # 数据库地址（aio_dev为开发库名）
-    username: ${DB_USERNAME:aios}
-    password: ${DB_PASSWORD:zb729927}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver  # PostgreSQL驱动
   jpa:
     hibernate:
