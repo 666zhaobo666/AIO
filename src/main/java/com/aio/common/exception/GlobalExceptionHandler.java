@@ -49,6 +49,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理ValidationException校验异常
+     */
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ModelApiResponse> handleValidationException(ValidationException e) {
+        log.warn("校验异常: {}", e.getMessage());
+        ModelApiResponse response = new ModelApiResponse();
+        response.setCode(e.getCode() != null ? e.getCode() : 400);
+        response.setMessage(e.getMessage());
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    /**
      * 处理绑定异常
      */
     @ExceptionHandler(BindException.class)
