@@ -27,7 +27,7 @@ public class SecurityContextUtils {
             String userIdStr = authentication.getPrincipal().toString();
             try {
                 return UUID.fromString(userIdStr);
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException _) {
                 return null;
             }
         }

@@ -71,9 +71,10 @@ public class JwtUtils {
                     .getPayload();
         } catch (Exception e) {
             log.error("解析JWT令牌失败: {}", e.getMessage());
-            return null;
+            return Jwts.claims().build(); // 返回空的Claims对象而不是null
         }
     }
+
 
     /**
      * 解析JWT令牌获取用户ID
