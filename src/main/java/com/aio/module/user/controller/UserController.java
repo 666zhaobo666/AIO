@@ -25,6 +25,18 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<UserApiResponse> register(UserRegisterRequest request) {
+        UserEntity user = getUserEntity(request);
+        // 调用注册服务（密码明文传入，服务层加密）
+        UserEntity userinfo = userService.register(user, request.getPassword());
+
+        UserApiResponse response = new UserApiResponse();
+        response.setCode(201);
+        response.setMessage("用户注册成功");
+        response.setData(userinfo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    private static UserEntity getUserEntity(UserRegisterRequest request) {
         UserEntity user = new UserEntity();
         // 复制请求参数到实体
         user.setUsername(request.getUsername());
@@ -36,14 +48,7 @@ public class UserController implements UserApi {
         user.setOccupation(request.getOccupation());
         user.setSignature(request.getSignature());
         user.setRole(UserRoleEnmu.USER.getValue());
-        // 调用注册服务（密码明文传入，服务层加密）
-        UserEntity userinfo = userService.register(user, request.getPassword());
-
-        UserApiResponse response = new UserApiResponse();
-        response.setCode(201);
-        response.setMessage("用户注册成功");
-        response.setData(userinfo);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return user;
     }
 
     @Override
