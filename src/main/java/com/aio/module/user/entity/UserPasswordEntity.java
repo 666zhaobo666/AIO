@@ -2,6 +2,7 @@ package com.aio.module.user.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -9,6 +10,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table(name = "aio_user_password")
+@EqualsAndHashCode(exclude = {"createdTime", "updatedTime", "version"})
 public class UserPasswordEntity {
     @Id
     private UUID userId;

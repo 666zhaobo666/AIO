@@ -119,7 +119,7 @@ class UserPasswordEntityTest {
 
     @Test
     void testEqualsAndHashCode() {
-        // 测试equals和hashCode（Lombok生成）
+        // 测试equals和hashCode
         UUID userId = UUID.randomUUID();
 
         UserPasswordEntity entity1 = new UserPasswordEntity();

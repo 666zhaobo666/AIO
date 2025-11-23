@@ -64,7 +64,7 @@ class UserPasswordRepositoryTest {
         Optional<Object> found = passwordRepository.findByUserId(testUserId);
 
         assertTrue(found.isPresent());
-        assertTrue(found.get() instanceof UserPasswordEntity);
+        assertInstanceOf(UserPasswordEntity.class, found.get());
         UserPasswordEntity entity = (UserPasswordEntity) found.get();
         assertEquals(testUserId, entity.getUserId());
     }
