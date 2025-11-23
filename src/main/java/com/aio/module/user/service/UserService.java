@@ -1,10 +1,11 @@
 package com.aio.module.user.service;
 
 import com.aio.api.user.model.UserApiResponse;
-import com.aio.common.exception.BusinessException;
 import com.aio.module.user.entity.UserEntity;
 import com.aio.module.user.enmus.UserRoleEnmu;
+import com.aio.module.user.enmus.UserExceptionEnum;
 import com.aio.module.user.entity.UserPasswordEntity;
+import com.aio.module.user.exception.UserException;
 import com.aio.module.user.repository.UserRepository;
 import com.aio.module.user.repository.UserPasswordRepository;
 import com.aio.module.user.utils.UserValidationUtils;
@@ -55,9 +56,13 @@ public class UserService {
     // 登录
     public UserEntity login(String account, String rawPassword) {
         UserEntity user = findUserByAccount(account);
+        // 用户不存在
+        if(user == null) {
+            throw new UserException(UserExceptionEnum.USER_NOT_EXIST);
+        }
         // 验证密码
         if (!passwordEncoder.matches(rawPassword, userPasswordRepository.findPasswordByUserId(user.getUserId()))) {
-            throw new BusinessException("密码错误");
+            throw new UserException(UserExceptionEnum.USER_PASSWORD_ERROR);
         }
         // 更新最后登录时间
         user.setLastLoginTime(LocalDateTime.now());
@@ -71,10 +76,10 @@ public class UserService {
 
         // 验证旧密码
         UserPasswordEntity userPassword = (UserPasswordEntity) userPasswordRepository.findByUserId(userId)
-                .orElseThrow(() -> new BusinessException("用户密码记录不存在"));
+                .orElseThrow(() -> new UserException(UserExceptionEnum.USER_PASSWORD_NOT_EXIST));
 
         if (!passwordEncoder.matches(oldPassword, userPassword.getPassword())) {
-            throw new BusinessException("旧密码错误");
+            throw new UserException(UserExceptionEnum.USER_OLD_PASSWORD_ERROR);
         }
 
         userPassword.setPassword(passwordEncoder.encode(newPassword));
@@ -90,7 +95,7 @@ public class UserService {
         boolean isAdmin = UserRoleEnmu.ADMIN.getValue().equals(currentRole);
         // 非管理员只能删除自己
         if (!isAdmin && !targetUserId.equals(currentUserId)) {
-            throw new BusinessException("无权限删除该用户");
+            throw new UserException(UserExceptionEnum.USER_NOT_ADMIN);
         }
         // 执行删除
         userPasswordRepository.deleteById(targetUserId);
@@ -99,7 +104,7 @@ public class UserService {
 
     public UserApiResponse getUserInfo(UUID userId) {
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+                .orElseThrow(() -> new UserException(UserExceptionEnum.USER_NOT_EXIST));
         UserApiResponse response = new UserApiResponse();
         response.setCode(200);
         response.setMessage("查询成功");
@@ -112,6 +117,6 @@ public class UserService {
         return userRepository.findByUsernameAndStatus(account, 1)
                 .orElseGet(() -> userRepository.findByEmailAndStatus(account, 1)
                         .orElseGet(() -> userRepository.findByPhoneAndStatus(account, 1)
-                                .orElseThrow(() -> new BusinessException("用户不存在或已禁用"))));
+                                .orElseThrow(() -> new UserException("用户不存在或已禁用"))));
     }
 }

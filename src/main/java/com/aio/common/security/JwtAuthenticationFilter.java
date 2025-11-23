@@ -1,6 +1,9 @@
 package com.aio.common.security;
 
+import com.aio.api.user.model.UserApiResponse;
 import com.aio.common.util.JwtUtils;
+import com.aio.module.user.enmus.UserExceptionEnum;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,31 +58,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 从请求头获取JWT令牌
             String token = extractTokenFromHeader(request);
 
-            // 如果令牌存在且有效
-            if (token != null && jwtUtils.validateToken(token)) {
-                // 从令牌中提取用户信息
-                String userId = jwtUtils.getUserIdFromToken(token);
-                String role = jwtUtils.getRoleFromToken(token);
+            // 如果令牌无效
+            if (token == null || !jwtUtils.validateToken(token)) {
+                sendErrorResponse(response, UserExceptionEnum.AUTHORIZATION_FAILED);
+                return;
+            }
 
-                if (userId != null) {
-                    // 创建认证对象
-                    UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                            userId,
-                            null,
-                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
-                        );
+            // 从令牌中提取用户信息
+            String userId = jwtUtils.getUserIdFromToken(token);
+            String role = jwtUtils.getRoleFromToken(token);
 
-                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            if (userId != null && role != null) {
+                // 创建认证对象
+                UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                        userId,
+                        null,
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
 
-                    // 设置到Spring Security上下文
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    log.debug("已设置JWT认证，用户ID: {}, 角色: {}", userId, role);
-                }
+                // 设置到Spring Security上下文
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                log.debug("已设置JWT认证，用户ID: {}, 角色: {}", userId, role);
+            } else {
+                sendErrorResponse(response, UserExceptionEnum.AUTHORIZATION_FAILED);
+                return;
             }
         } catch (Exception e) {
             log.error("JWT认证失败: {}", e.getMessage());
+            sendErrorResponse(response, UserExceptionEnum.AUTHORIZATION_FAILED);
+            return;
         }
 
         // 继续过滤器链
@@ -103,5 +114,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         return null;
     }
-}
 
+    /**
+     * 发送错误响应
+     */
+    private void sendErrorResponse(HttpServletResponse response, UserExceptionEnum exceptionEnum) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        response.setStatus(exceptionEnum.getCode());
+
+        UserApiResponse apiResponse = new UserApiResponse();
+        apiResponse.setCode(exceptionEnum.getCode());
+        apiResponse.setMessage(exceptionEnum.getMessage());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        response.getWriter().write(objectMapper.writeValueAsString(apiResponse));
+    }
+}

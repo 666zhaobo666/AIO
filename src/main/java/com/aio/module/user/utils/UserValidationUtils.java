@@ -1,8 +1,7 @@
 package com.aio.module.user.utils;
 
-import com.aio.common.exception.BusinessException;
-import com.aio.common.exception.ValidationException;
-import com.aio.common.enums.ValidationExceptionEnum;
+import com.aio.module.user.exception.UserException;
+import com.aio.module.user.enmus.UserExceptionEnum;
 import com.aio.module.user.enmus.UserRoleEnmu;
 import com.aio.module.user.enmus.UserGenderEnum;
 import com.aio.module.user.entity.UserEntity;
@@ -83,62 +82,62 @@ public class UserValidationUtils {
     // 校验用户名格式
     public void validateUserName(String username) {
         if (username != null && !USERNAME_PATTERN.matcher(username).matches()) {
-            throw new ValidationException(ValidationExceptionEnum.USERNAME_VALIDATION_ERROR);
+            throw new UserException(UserExceptionEnum.USERNAME_VALIDATION_ERROR);
         }
     }
 
     // 校验密码格式
     public void validatePassword(String password) {
         if (password != null && !PASSWORD_PATTERN.matcher(password).matches()) {
-            throw new ValidationException(ValidationExceptionEnum.PASSWORD_VALIDATION_ERROR);
+            throw new UserException(UserExceptionEnum.PASSWORD_VALIDATION_ERROR);
         }
     }
 
     // 校验邮箱格式
     public void validateEmail(String email) {
         if (email != null && !EMAIL_PATTERN.matcher(email).matches()) {
-            throw new ValidationException(ValidationExceptionEnum.EMAIL_VALIDATION_ERROR);
+            throw new UserException(UserExceptionEnum.EMAIL_VALIDATION_ERROR);
         }
     }
 
     // 校验手机号格式
     public void validatePhone(String phone) {
         if (phone != null && !PHONE_PATTERN.matcher(phone).matches()) {
-            throw new ValidationException(ValidationExceptionEnum.PHONE_VALIDATION_ERROR);
+            throw new UserException(UserExceptionEnum.PHONE_VALIDATION_ERROR);
         }
     }
 
     // 校验生日格式
     public void validateBirthday(LocalDate birthday) {
         if (birthday != null && birthday.isAfter(LocalDate.now())) {
-            throw new ValidationException(ValidationExceptionEnum.BIRTHDAY_VALIDATION_ERROR);
+            throw new UserException(UserExceptionEnum.BIRTHDAY_VALIDATION_ERROR);
         }
     }
 
     // 校验用户性别
     public void validateGender(String gender) {
         if (!UserGenderEnum.isValid(gender)) {
-            throw new ValidationException(ValidationExceptionEnum.GENDER_VALIDATION_ERROR);
+            throw new UserException(UserExceptionEnum.GENDER_VALIDATION_ERROR);
         }
     }
 
     // 校验用户角色
     public void validateRole(String role) {
         if (!UserRoleEnmu.isValid(role)) {
-            throw new ValidationException(ValidationExceptionEnum.ROLE_VALIDATION_ERROR);
+            throw new UserException(UserExceptionEnum.ROLE_VALIDATION_ERROR);
         }
     }
 
     // 校验用户名/邮箱/手机号唯一性
     public void validateUserAccountUniqueness(UserEntity user) {
         if (userRepository.existsByUsername(user.getUsername())) {
-            throw new BusinessException("用户名已存在");
+            throw new UserException(UserExceptionEnum.USERNAME_ALREADY_EXIST);
         }
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new BusinessException("邮箱已被注册");
+            throw new UserException(UserExceptionEnum.EMAIL_ALREADY_EXIST);
         }
         if (user.getPhone() != null && userRepository.existsByPhone(user.getPhone())) {
-            throw new BusinessException("手机号已被注册");
+            throw new UserException(UserExceptionEnum.PHONE_ALREADY_EXIST);
         }
     }
 }

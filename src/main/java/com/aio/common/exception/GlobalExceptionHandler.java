@@ -1,6 +1,7 @@
 package com.aio.common.exception;
 
 import com.aio.api.user.model.UserApiResponse;
+import com.aio.module.user.exception.UserException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,15 +20,14 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
     /**
-     * 处理业务异常
+     * 处理UserException异常
      */
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<UserApiResponse> handleBusinessException(BusinessException e) {
-        log.warn("业务异常: {}", e.getMessage());
+    @ExceptionHandler(UserException.class)
+    public ResponseEntity<UserApiResponse> handleUserException(UserException e) {
+        log.warn("校验异常: {}", e.getMessage());
         UserApiResponse response = new UserApiResponse();
-        response.setCode(400);
+        response.setCode(e.getCode() != null ? e.getCode() : 400);
         response.setMessage(e.getMessage());
         return ResponseEntity.badRequest().body(response);
     }
@@ -45,18 +45,6 @@ public class GlobalExceptionHandler {
         UserApiResponse response = new UserApiResponse();
         response.setCode(400);
         response.setMessage("参数校验失败: " + message);
-        return ResponseEntity.badRequest().body(response);
-    }
-
-    /**
-     * 处理ValidationException校验异常
-     */
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<UserApiResponse> handleValidationException(ValidationException e) {
-        log.warn("校验异常: {}", e.getMessage());
-        UserApiResponse response = new UserApiResponse();
-        response.setCode(e.getCode() != null ? e.getCode() : 400);
-        response.setMessage(e.getMessage());
         return ResponseEntity.badRequest().body(response);
     }
 
