@@ -35,9 +35,10 @@ public class SecurityConfig {
      * 安全过滤器链配置
      */
     @Bean
+    @SuppressWarnings("java:S4502")
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // 禁用CSRF（因为使用JWT，不需要CSRF保护）
+            // 禁用 CSRF：当前系统使用 JWT 无状态认证（无 Session、JWT 放在 Authorization 头）
             .csrf(AbstractHttpConfigurer::disable)
 
             // 配置会话管理为无状态（使用JWT不需要session）
