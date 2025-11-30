@@ -2,7 +2,7 @@ package com.aio.module.user.service;
 
 import com.aio.api.user.model.UserApiResponse;
 import com.aio.module.user.entity.UserEntity;
-import com.aio.module.user.enmus.UserRoleEnmu;
+import com.aio.module.user.enmus.UserRoleEnum;
 import com.aio.module.user.enmus.UserExceptionEnum;
 import com.aio.module.user.entity.UserPasswordEntity;
 import com.aio.module.user.exception.UserException;
@@ -75,7 +75,7 @@ public class UserService {
     public void updatePassword(UUID userId, String oldPassword, String newPassword) {
 
         // 验证旧密码
-        UserPasswordEntity userPassword = (UserPasswordEntity) userPasswordRepository.findByUserId(userId)
+        UserPasswordEntity userPassword = userPasswordRepository.findByUserId(userId)
                 .orElseThrow(() -> new UserException(UserExceptionEnum.USER_PASSWORD_NOT_EXIST));
 
         if (!passwordEncoder.matches(oldPassword, userPassword.getPassword())) {
@@ -92,7 +92,7 @@ public class UserService {
     @Transactional
     public void deleteUser(UUID targetUserId, UUID currentUserId, String currentRole) {
         // 检查当前用户是否为管理员
-        boolean isAdmin = UserRoleEnmu.ADMIN.getValue().equals(currentRole);
+        boolean isAdmin = UserRoleEnum.ADMIN.getValue().equals(currentRole);
         // 非管理员只能删除自己
         if (!isAdmin && !targetUserId.equals(currentUserId)) {
             throw new UserException(UserExceptionEnum.USER_NOT_ADMIN);

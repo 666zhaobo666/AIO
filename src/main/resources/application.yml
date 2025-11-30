@@ -11,9 +11,3 @@ spring:
       hibernate:
         format_sql: true  # SQL格式化（所有环境通用）
         dialect: org.hibernate.dialect.PostgreSQLDialect  # PostgreSQL方言
-
-# 自定义配置（如JWT、业务参数等）
-aio:
-  jwt:
-    secret: aio-platform-jwt-secret-key-1234567890  # JWT密钥（生产环境需更换为复杂密钥）
-    expire-days: 7  # 令牌过期时间（天）

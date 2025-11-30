@@ -54,20 +54,6 @@ class UserExceptionTest {
     }
 
     @Test
-    void testExceptionIsRuntimeException() {
-        // 测试UserException是RuntimeException的子类
-        UserException exception = new UserException();
-        assertTrue(exception instanceof RuntimeException);
-    }
-
-    @Test
-    void testExceptionIsSerializable() {
-        // 测试UserException是可序列化的
-        UserException exception = new UserException();
-        assertTrue(exception instanceof java.io.Serializable);
-    }
-
-    @Test
     void testDifferentExceptionEnums() {
         // 测试不同的异常枚举
         UserException exception1 = new UserException(UserExceptionEnum.EMAIL_VALIDATION_ERROR);

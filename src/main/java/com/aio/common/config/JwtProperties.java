@@ -15,11 +15,11 @@ public class JwtProperties {
     /**
      * JWT密钥
      */
-    private String secret = "aio-platform-jwt-secret-key-1234567890";
+    private String secret;
 
     /**
      * 令牌过期天数
      */
-    private int expireDays = 7;
+    private int expireDays;
 }
 

@@ -2,7 +2,7 @@ package com.aio.module.user.utils;
 
 import com.aio.module.user.exception.UserException;
 import com.aio.module.user.enmus.UserExceptionEnum;
-import com.aio.module.user.enmus.UserRoleEnmu;
+import com.aio.module.user.enmus.UserRoleEnum;
 import com.aio.module.user.enmus.UserGenderEnum;
 import com.aio.module.user.entity.UserEntity;
 import com.aio.module.user.repository.UserRepository;
@@ -123,7 +123,7 @@ public class UserValidationUtils {
 
     // 校验用户角色
     public void validateRole(String role) {
-        if (!UserRoleEnmu.isValid(role)) {
+        if (!UserRoleEnum.isValid(role)) {
             throw new UserException(UserExceptionEnum.ROLE_VALIDATION_ERROR);
         }
     }

@@ -61,7 +61,7 @@ class UserPasswordRepositoryTest {
     @Test
     void testFindByUserId() {
         // 测试根据用户ID查询
-        Optional<Object> found = passwordRepository.findByUserId(testUserId);
+        Optional<UserPasswordEntity> found = passwordRepository.findByUserId(testUserId);
 
         assertTrue(found.isPresent());
         assertInstanceOf(UserPasswordEntity.class, found.get());
@@ -73,7 +73,7 @@ class UserPasswordRepositoryTest {
     void testFindByUserIdNotFound() {
         // 测试查询不存在的用户ID
         UUID nonExistentId = UUID.randomUUID();
-        Optional<Object> found = passwordRepository.findByUserId(nonExistentId);
+        Optional<UserPasswordEntity> found = passwordRepository.findByUserId(nonExistentId);
 
         assertFalse(found.isPresent());
     }
@@ -113,7 +113,7 @@ class UserPasswordRepositoryTest {
         // 测试删除密码
         passwordRepository.deleteById(testUserId);
 
-        Optional<Object> found = passwordRepository.findByUserId(testUserId);
+        Optional<UserPasswordEntity> found = passwordRepository.findByUserId(testUserId);
         assertFalse(found.isPresent());
     }
 

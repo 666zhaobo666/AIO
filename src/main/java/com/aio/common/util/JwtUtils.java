@@ -46,7 +46,8 @@ public class JwtUtils {
         claims.put("role", role);
 
         Date now = new Date();
-        Date expiration = new Date(now.getTime() + expireDays * 24 * 60 * 60 * 1000L);
+        long expireMillis = ((long) expireDays) * 24 * 60 * 60 * 1000L;
+        Date expiration = new Date(now.getTime() + expireMillis);
 
         return Jwts.builder()
                 .claims(claims)

@@ -15,8 +15,8 @@ spring:
 
 aio:
   jwt:
-    secret: aio-platform-jwt-secret-key-1234567890  # JWT密钥（生产环境务必更换）
-    expire-days: 7  # 令牌过期天数
+    secret: ${JWT_SECRET}  # JWT密钥（生产环境务必更换）
+    expire-days: ${JWT_EXPIRE_DAYS}  # 令牌过期天数
 
 # 日志配置（开发环境日志级别更详细）
 logging:

@@ -15,6 +15,6 @@ public interface UserPasswordRepository extends JpaRepository<UserPasswordEntity
     @Query("SELECT up.password FROM UserPasswordEntity up WHERE up.userId = :userId")
     String findPasswordByUserId(@Param("userId") UUID userId);
 
-    Optional<Object> findByUserId(UUID userId);
+    Optional<UserPasswordEntity> findByUserId(UUID userId);
 }
 
