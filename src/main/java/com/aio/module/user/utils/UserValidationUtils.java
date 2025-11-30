@@ -116,7 +116,7 @@ public class UserValidationUtils {
 
     // 校验用户性别
     public void validateGender(String gender) {
-        if (gender == null || !UserGenderEnum.isValid(gender)) {
+        if (gender != null && !UserGenderEnum.isValid(gender)) {
             throw new UserException(UserExceptionEnum.GENDER_VALIDATION_ERROR);
         }
     }
