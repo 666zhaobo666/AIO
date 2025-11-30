@@ -1,37 +1,37 @@
-# 生产环境端口（通常用80或8080，根据服务器配置）
-server:
-  port: 8080
-
-# 生产环境数据库配置（线上PostgreSQL）
-spring:
-  datasource:
-    url: jdbc:postgresql://prod-db-host:5432/aio_prod  # 线上数据库地址（替换为实际地址）
-    username: ${DB_USERNAME}  # 从环境变量获取用户名（安全起见，不硬编码）
-    password: ${DB_PASSWORD}  # 从环境变量获取密码
-    driver-class-name: org.postgresql.Driver
-    hikari:  # 连接池配置（生产环境必须优化）
-      maximum-pool-size: 20  # 最大连接数
-      minimum-idle: 5  # 最小空闲连接
-      idle-timeout: 300000  # 空闲超时（5分钟）
-      connection-timeout: 20000  # 连接超时（20秒）
-  jpa:
-    hibernate:
-      ddl-auto: none  # 生产环境禁用自动建表（通过 Liquibase 管理）
-    show-sql: false  # 生产环境不打印SQL（避免性能损耗）
-
-# 日志配置（生产环境日志级别更高，输出到文件）
-logging:
-  level:
-    root: WARN
-    com.aio: INFO  # 项目包日志级别为INFO
-    org.springframework.security: WARN
-  file:
-    name: /var/log/aio-platform/aio.log  # 日志文件路径（需确保目录存在）
-  pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"  # 文件日志格式
-
-# 生产环境JWT配置（密钥更复杂，从环境变量获取）
-aio:
-  jwt:
-    secret: ${JWT_SECRET}  # 从环境变量获取密钥（避免硬编码）
-    expire-days: 3  # 生产环境令牌过期时间缩短（更安全）
+## 生产环境端口（通常用80或8080，根据服务器配置）
+#server:
+#  port: 8080
+#
+## 生产环境数据库配置（线上PostgreSQL）
+#spring:
+#  datasource:
+#    url: jdbc:postgresql://prod-db-host:5432/aio_prod  # 线上数据库地址（替换为实际地址）
+#    username: ${DB_USERNAME}  # 从环境变量获取用户名（安全起见，不硬编码）
+#    password: ${DB_PASSWORD}  # 从环境变量获取密码
+#    driver-class-name: org.postgresql.Driver
+#    hikari:  # 连接池配置（生产环境必须优化）
+#      maximum-pool-size: 20  # 最大连接数
+#      minimum-idle: 5  # 最小空闲连接
+#      idle-timeout: 300000  # 空闲超时（5分钟）
+#      connection-timeout: 20000  # 连接超时（20秒）
+#  jpa:
+#    hibernate:
+#      ddl-auto: none  # 生产环境禁用自动建表（通过 Liquibase 管理）
+#    show-sql: false  # 生产环境不打印SQL（避免性能损耗）
+#
+## 日志配置（生产环境日志级别更高，输出到文件）
+#logging:
+#  level:
+#    root: WARN
+#    com.aio: INFO  # 项目包日志级别为INFO
+#    org.springframework.security: WARN
+#  file:
+#    name: /var/log/aio-platform/aio.log  # 日志文件路径（需确保目录存在）
+#  pattern:
+#    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"  # 文件日志格式
+#
+## 生产环境JWT配置（密钥更复杂，从环境变量获取）
+#aio:
+#  jwt:
+#    secret: ${JWT_SECRET}  # 从环境变量获取密钥（避免硬编码）
+#    expire-days: 3  # 生产环境令牌过期时间缩短（更安全）

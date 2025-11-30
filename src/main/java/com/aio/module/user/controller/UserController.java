@@ -1,15 +1,18 @@
 package com.aio.module.user.controller;
 
 import com.aio.api.user.UserApi;
-import com.aio.api.user.model.ModelApiResponse;
+import com.aio.api.user.model.UserApiResponse;
 import com.aio.api.user.model.LoginResponse;
 import com.aio.api.user.model.UpdatePasswordRequest;
 import com.aio.api.user.model.UserLoginRequest;
 import com.aio.api.user.model.UserRegisterRequest;
+import com.aio.module.user.enums.UserRoleEnum;
+import com.aio.common.security.SecurityContextUtils;
 import com.aio.module.user.entity.UserEntity;
 import com.aio.module.user.service.UserService;
-import com.aio.common.util.JwtUtils; // 自定义JWT工具类
+import com.aio.common.util.JwtUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
@@ -21,24 +24,31 @@ public class UserController implements UserApi {
     private final JwtUtils jwtUtils; // JWT工具类（生成/解析令牌）
 
     @Override
-    public ResponseEntity<ModelApiResponse> register(UserRegisterRequest request) {
+    public ResponseEntity<UserApiResponse> register(UserRegisterRequest request) {
+        UserEntity user = getUserEntity(request);
+        // 调用注册服务（密码明文传入，服务层加密）
+        UserEntity userinfo = userService.register(user, request.getPassword());
+
+        UserApiResponse response = new UserApiResponse();
+        response.setCode(201);
+        response.setMessage("用户注册成功");
+        response.setData(userinfo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    private static UserEntity getUserEntity(UserRegisterRequest request) {
         UserEntity user = new UserEntity();
         // 复制请求参数到实体
         user.setUsername(request.getUsername());
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
-        user.setGender(request.getGender() != null ? request.getGender().toString() : null);
+        user.setGender(request.getGender() != null ? request.getGender() : null);
         user.setBirthday(request.getBirthday());
         user.setOccupation(request.getOccupation());
         user.setSignature(request.getSignature());
-        // 调用注册服务（密码明文传入，服务层加密）
-        userService.register(user, request.getPassword());
-
-        ModelApiResponse response = new ModelApiResponse();
-        response.setCode(200);
-        response.setMessage("注册成功");
-        return ResponseEntity.ok(response);
+        user.setRole(UserRoleEnum.USER.getValue());
+        return user;
     }
 
     @Override
@@ -56,12 +66,18 @@ public class UserController implements UserApi {
     }
 
     @Override
-    public ResponseEntity<ModelApiResponse> updatePassword(UpdatePasswordRequest request) {
-        // 从JWT认证信息中获取当前用户ID，暂时使用硬编码
-        String currentUserId = "123e4567-e89b-12d3-a456-426614174000"; // 假设JWT的subject为userId
-        userService.updatePassword(UUID.fromString(currentUserId), request.getOldPassword(), request.getNewPassword());
+    public ResponseEntity<UserApiResponse> updatePassword(UpdatePasswordRequest request) {
+        // 从JWT认证上下文中获取当前用户ID
+        UUID currentUserId = SecurityContextUtils.getCurrentUserId();
+        if (currentUserId == null) {
+            UserApiResponse response = new UserApiResponse();
+            response.setCode(401);
+            response.setMessage("未认证或认证已过期");
+            return ResponseEntity.status(401).body(response);
+        }
+        userService.updatePassword(currentUserId, request.getOldPassword(), request.getNewPassword());
 
-        ModelApiResponse response = new ModelApiResponse();
+        UserApiResponse response = new UserApiResponse();
         response.setCode(200);
         response.setMessage("密码修改成功");
         return ResponseEntity.ok(response);
@@ -69,11 +85,15 @@ public class UserController implements UserApi {
 
     @Override
     public ResponseEntity<Void> deleteUser(UUID userId) {
-        // 从认证信息中获取当前用户ID和角色，暂时使用硬编码
-        String currentUserId = "123e4567-e89b-12d3-a456-426614174000";
-        String currentRole = "admin"; // 假设权限格式为"ROLE_{role}"
+        // 从JWT认证上下文中获取当前用户ID和角色
+        UUID currentUserId = SecurityContextUtils.getCurrentUserId();
+        String currentRole = SecurityContextUtils.getCurrentUserRole();
+        if (currentUserId == null || currentRole == null) {
+            return ResponseEntity.status(401).build();
+        }
+
         // 调用删除服务
-        userService.deleteUser(userId, UUID.fromString(currentUserId), currentRole);
+        userService.deleteUser(userId, currentUserId, currentRole);
         return ResponseEntity.noContent().build();
     }
 }
