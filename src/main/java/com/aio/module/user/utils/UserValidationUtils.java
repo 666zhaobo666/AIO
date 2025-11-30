@@ -21,7 +21,7 @@ public class UserValidationUtils {
         this.userRepository = userRepository;
     }
 
-/** ==================== 长度限制常量（解决魔法数字警告）==================== */
+/* ==================== 长度限制常量（解决魔法数字警告）==================== */
     /** 用户名最小长度 */
     private static final int USERNAME_MIN_LENGTH = 4;
     /** 用户名最大长度 */
