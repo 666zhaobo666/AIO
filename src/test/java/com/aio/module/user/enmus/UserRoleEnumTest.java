@@ -71,9 +71,7 @@ class UserRoleEnumTest {
     @Test
     void testEnumValueOfInvalid() {
         // 测试valueOf方法抛出异常
-        assertThrows(IllegalArgumentException.class, () -> {
-            UserRoleEnum.valueOf("INVALID");
-        });
+        assertThrows(IllegalArgumentException.class, () -> UserRoleEnum.valueOf("INVALID"));
     }
 
     @Test

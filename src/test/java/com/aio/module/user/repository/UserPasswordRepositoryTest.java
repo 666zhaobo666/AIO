@@ -65,7 +65,7 @@ class UserPasswordRepositoryTest {
 
         assertTrue(found.isPresent());
         assertInstanceOf(UserPasswordEntity.class, found.get());
-        UserPasswordEntity entity = (UserPasswordEntity) found.get();
+        UserPasswordEntity entity = found.orElseThrow();
         assertEquals(testUserId, entity.getUserId());
     }
 
@@ -131,13 +131,13 @@ class UserPasswordRepositoryTest {
         // 测试乐观锁
         // Note: In JPA, optimistic locking requires fetching the entity twice in separate transactions
         // For this test, we'll modify the password twice and verify the version changes
-        UserPasswordEntity pwd1 = passwordRepository.findById(testUserId).get();
+        UserPasswordEntity pwd1 = passwordRepository.findById(testUserId).orElseThrow();
         Integer initialVersion = pwd1.getVersion();
 
         pwd1.setPassword("$2a$10$password1");
         passwordRepository.saveAndFlush(pwd1);
 
-        UserPasswordEntity refreshed = passwordRepository.findById(testUserId).get();
+        UserPasswordEntity refreshed = passwordRepository.findById(testUserId).orElseThrow();
         assertNotEquals(initialVersion, refreshed.getVersion());
     }
 
