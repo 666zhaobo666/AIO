@@ -1,4 +1,4 @@
-package com.aio.module.user.enmus;
+package com.aio.module.user.enums;
 
 import lombok.Getter;
 

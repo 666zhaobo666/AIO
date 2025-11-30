@@ -1,9 +1,9 @@
 package com.aio.module.user.utils;
 
 import com.aio.module.user.exception.UserException;
-import com.aio.module.user.enmus.UserExceptionEnum;
-import com.aio.module.user.enmus.UserRoleEnum;
-import com.aio.module.user.enmus.UserGenderEnum;
+import com.aio.module.user.enums.UserExceptionEnum;
+import com.aio.module.user.enums.UserRoleEnum;
+import com.aio.module.user.enums.UserGenderEnum;
 import com.aio.module.user.entity.UserEntity;
 import com.aio.module.user.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ public class UserValidationUtils {
         this.userRepository = userRepository;
     }
 
-    // ==================== 长度限制常量（解决魔法数字警告）====================
+/** ==================== 长度限制常量（解决魔法数字警告）==================== */
     /** 用户名最小长度 */
     private static final int USERNAME_MIN_LENGTH = 4;
     /** 用户名最大长度 */
@@ -116,14 +116,14 @@ public class UserValidationUtils {
 
     // 校验用户性别
     public void validateGender(String gender) {
-        if (!UserGenderEnum.isValid(gender)) {
+        if (gender == null || !UserGenderEnum.isValid(gender)) {
             throw new UserException(UserExceptionEnum.GENDER_VALIDATION_ERROR);
         }
     }
 
     // 校验用户角色
     public void validateRole(String role) {
-        if (!UserRoleEnum.isValid(role)) {
+        if (role == null || !UserRoleEnum.isValid(role)) {
             throw new UserException(UserExceptionEnum.ROLE_VALIDATION_ERROR);
         }
     }

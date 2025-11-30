@@ -1,6 +1,6 @@
 package com.aio.module.user.exception;
 
-import com.aio.module.user.enmus.UserExceptionEnum;
+import com.aio.module.user.enums.UserExceptionEnum;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

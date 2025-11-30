@@ -2,7 +2,7 @@ package com.aio.module.user.service;
 
 import com.aio.module.user.entity.UserEntity;
 import com.aio.module.user.entity.UserPasswordEntity;
-import com.aio.module.user.enmus.UserExceptionEnum;
+import com.aio.module.user.enums.UserExceptionEnum;
 import com.aio.module.user.exception.UserException;
 import com.aio.module.user.repository.UserPasswordRepository;
 import com.aio.module.user.repository.UserRepository;

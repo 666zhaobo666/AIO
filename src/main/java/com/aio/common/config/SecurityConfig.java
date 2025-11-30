@@ -39,6 +39,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             // 禁用 CSRF：当前系统使用 JWT 无状态认证（无 Session、JWT 放在 Authorization 头）
+            // 详细说明：本系统采用基于JWT的无状态认证，所有认证信息通过Authorization头部传递，未使用Session或Cookie存储认证信息。
+            // 由于CSRF攻击主要针对基于Cookie的认证机制，而JWT令牌不会被浏览器自动附加到跨域请求，因此CSRF保护在此架构下不是必需的。
             .csrf(AbstractHttpConfigurer::disable)
 
             // 配置会话管理为无状态（使用JWT不需要session）

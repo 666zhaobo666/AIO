@@ -2,7 +2,7 @@ package com.aio.common.exception;
 
 import com.aio.api.user.model.UserApiResponse;
 import com.aio.module.user.exception.UserException;
-import com.aio.module.user.enmus.UserExceptionEnum;
+import com.aio.module.user.enums.UserExceptionEnum;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.Test;

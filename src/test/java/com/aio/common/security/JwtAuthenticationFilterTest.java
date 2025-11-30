@@ -1,7 +1,7 @@
 package com.aio.common.security;
 
 import com.aio.common.util.JwtUtils;
-import com.aio.module.user.enmus.UserExceptionEnum;
+import com.aio.module.user.enums.UserExceptionEnum;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -2,8 +2,8 @@ package com.aio.module.user.service;
 
 import com.aio.api.user.model.UserApiResponse;
 import com.aio.module.user.entity.UserEntity;
-import com.aio.module.user.enmus.UserRoleEnum;
-import com.aio.module.user.enmus.UserExceptionEnum;
+import com.aio.module.user.enums.UserRoleEnum;
+import com.aio.module.user.enums.UserExceptionEnum;
 import com.aio.module.user.entity.UserPasswordEntity;
 import com.aio.module.user.exception.UserException;
 import com.aio.module.user.repository.UserRepository;
@@ -102,6 +102,13 @@ public class UserService {
         userRepository.deleteById(targetUserId);
     }
 
+    /**
+     * 根据用户ID获取用户信息
+     *
+     * @param userId 用户唯一标识符
+     * @return UserApiResponse 包含用户信息的响应对象
+     * @throws UserException 当用户不存在时抛出 USER_NOT_EXIST 异常
+     */
     public UserApiResponse getUserInfo(UUID userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserExceptionEnum.USER_NOT_EXIST));

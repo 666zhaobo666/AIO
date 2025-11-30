@@ -2,7 +2,7 @@ package com.aio.common.security;
 
 import com.aio.api.user.model.UserApiResponse;
 import com.aio.common.util.JwtUtils;
-import com.aio.module.user.enmus.UserExceptionEnum;
+import com.aio.module.user.enums.UserExceptionEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

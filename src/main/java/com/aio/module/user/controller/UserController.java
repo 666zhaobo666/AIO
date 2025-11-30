@@ -6,7 +6,7 @@ import com.aio.api.user.model.LoginResponse;
 import com.aio.api.user.model.UpdatePasswordRequest;
 import com.aio.api.user.model.UserLoginRequest;
 import com.aio.api.user.model.UserRegisterRequest;
-import com.aio.module.user.enmus.UserRoleEnum;
+import com.aio.module.user.enums.UserRoleEnum;
 import com.aio.common.security.SecurityContextUtils;
 import com.aio.module.user.entity.UserEntity;
 import com.aio.module.user.service.UserService;
