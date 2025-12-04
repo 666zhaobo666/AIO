@@ -1,6 +1,6 @@
 package com.aio.common.security;
 
-import com.aio.api.user.model.UserApiResponse;
+import com.aio.api.model.ModelApiResponse;
 import com.aio.common.util.JwtUtils;
 import com.aio.module.user.enums.UserExceptionEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -122,9 +122,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(exceptionEnum.getCode());
 
-        UserApiResponse apiResponse = new UserApiResponse();
+        ModelApiResponse apiResponse = new ModelApiResponse();
         apiResponse.setCode(exceptionEnum.getCode());
-        apiResponse.setMessage(exceptionEnum.getMessage());
+        apiResponse.setMsg(exceptionEnum.getMessage());
+        apiResponse.setSuccess(false);
+        apiResponse.setData(null);
 
         ObjectMapper objectMapper = new ObjectMapper();
         response.getWriter().write(objectMapper.writeValueAsString(apiResponse));

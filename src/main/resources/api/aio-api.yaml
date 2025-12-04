@@ -3,8 +3,11 @@ info:
   title: User Management API
   version: 1.0.0
   x-java-interface-name: UserApi
+
+## endpoints ##
 paths:
-  /api/users/register:
+  # 注册
+  /api/user/register:
     post:
       operationId: register
       summary: 用户注册
@@ -22,9 +25,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserApiResponse'
+                $ref: '#/components/schemas/ModelApiResponse'
 
-  /api/users/login:
+  # 登录
+  /api/user/login:
     post:
       operationId: login
       summary: 用户登录（支持用户名/邮箱/手机号）
@@ -42,9 +46,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                $ref: '#/components/schemas/ModelApiResponse'
 
-  /api/users/password:
+  # 修改密码
+  /api/user/password:
     put:
       operationId: updatePassword
       summary: 修改密码（需登录）
@@ -64,9 +69,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserApiResponse'
+                $ref: '#/components/schemas/ModelApiResponse'
 
-  /api/users/delete/{userId}:
+  # 删除用户
+  /api/user/delete/{userId}:
     delete:
       operationId: deleteUser
       summary: 删除用户（管理员可删除所有用户，普通用户仅可删除自己）
@@ -82,9 +88,15 @@ paths:
             type: string
             format: uuid
       responses:
-        '204':
-          description: 删除成功
+        '200':
+          description: 用户删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelApiResponse'
 
+
+## models ##
 components:
   securitySchemes:
     bearerAuth:
@@ -93,6 +105,59 @@ components:
       bearerFormat: JWT
 
   schemas:
+    ## response
+    # 通用API响应格式
+    ModelApiResponse:
+      type: object
+      required:
+        - code
+        - msg
+        - ts
+        - success
+      properties:
+        code:
+          type: integer
+          description: 状态码
+          example: 200
+        msg:
+          type: string
+          description: 响应消息
+          example: "操作成功"
+        ts:
+          type: integer
+          format: int64
+          description: 响应时间戳(毫秒)
+          example: 1701747900000
+        success:
+          type: boolean
+          description: 操作是否成功
+          example: true
+        data:
+          description: 响应数据，具体类型根据不同API而定
+          nullable: true
+
+    UserLoginDataResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: 用户ID
+          example: "5f9b0b0b0b0b0b0b0b0b0b0b"
+        userName:
+          type: string
+          description: 用户名
+          example: "test"
+        token:
+          type: string
+          description: 用户登录凭证
+          example: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1Zjli"
+        role:
+          type: string
+          description: 用户角色
+          example: "USER"
+
+    ## request
     UserRegisterRequest:
       type: object
       required:
@@ -139,20 +204,6 @@ components:
           type: string
           format: password
 
-    LoginResponse:
-      type: object
-      properties:
-        token:
-          type: string
-          description: JWT令牌
-        userId:
-          type: string
-          format: uuid
-        username:
-          type: string
-        role:
-          type: string
-
     UpdatePasswordRequest:
       type: object
       required:
@@ -167,14 +218,3 @@ components:
           minLength: 8
           format: password
 
-    UserApiResponse:
-      type: object
-      properties:
-        code:
-          type: integer
-          description: 状态码
-        message:
-          type: string
-          description: 提示信息
-        data:
-          type: object

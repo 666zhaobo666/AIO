@@ -1,6 +1,6 @@
 package com.aio.module.user.service;
 
-import com.aio.api.user.model.UserApiResponse;
+import com.aio.api.model.ModelApiResponse;
 import com.aio.module.user.entity.UserEntity;
 import com.aio.module.user.enums.UserRoleEnum;
 import com.aio.module.user.enums.UserExceptionEnum;
@@ -11,6 +11,7 @@ import com.aio.module.user.repository.UserPasswordRepository;
 import com.aio.module.user.utils.UserValidationUtils;
 
 import lombok.RequiredArgsConstructor;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -106,16 +107,16 @@ public class UserService {
      * 根据用户ID获取用户信息
      *
      * @param userId 用户唯一标识符
-     * @return UserApiResponse 包含用户信息的响应对象
+     * @return ModelApiResponse 包含用户信息的响应对象
      * @throws UserException 当用户不存在时抛出 USER_NOT_EXIST 异常
      */
-    public UserApiResponse getUserInfo(UUID userId) {
+    public ModelApiResponse getUserInfo(UUID userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserException(UserExceptionEnum.USER_NOT_EXIST));
-        UserApiResponse response = new UserApiResponse();
+        ModelApiResponse response = new ModelApiResponse();
         response.setCode(200);
-        response.setMessage("查询成功");
-        response.setData(user);
+        response.setMsg("查询成功");
+        response.setData(JsonNullable.of(user));
         return response;
     }
 
