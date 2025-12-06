@@ -42,8 +42,8 @@ public class UserController implements UserApi {
     private static UserEntity getUserEntity(UserRegisterRequest request) {
         UserEntity user = new UserEntity();
         // 复制请求参数到实体
-        user.setUserName(request.getUsername());
-        user.setDisplayName(request.getName());
+        user.setUserName(request.getUserName());
+        user.setDisplayName(request.getDisplayName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setGender(request.getGender() != null ? request.getGender() : null);

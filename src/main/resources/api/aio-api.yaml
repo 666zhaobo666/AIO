@@ -188,15 +188,15 @@ components:
     UserRegisterRequest:
       type: object
       required:
-        - username
-        - name
+        - userName
+        - displayName
         - email
         - password
       properties:
-        username:
+        userName:
           type: string
           maxLength: 100
-        name:
+        displayName:
           type: string
           maxLength: 100
         email:
@@ -207,7 +207,8 @@ components:
           maxLength: 100
         password:
           type: string
-          maxLength: 100
+          minLength: 6
+          maxLength: 20
         gender:
           type: string
           default: U
@@ -229,6 +230,8 @@ components:
           type: string # 用户名/邮箱/手机号
         password:
           type: string
+          minLength: 6
+          maxLength: 20
           format: password
 
     UpdatePasswordRequest:
@@ -239,17 +242,20 @@ components:
       properties:
         oldPassword:
           type: string
+          minLength: 6
+          maxLength: 20
           format: password
         newPassword:
           type: string
-          minLength: 8
+          minLength: 6
+          maxLength: 20
           format: password
 
     UpdateUserInfoRequest:
       type: object
       description: 修改用户信息请求
       properties:
-        username:
+        userName:
           type: string
           maxLength: 100
           description: 用户名

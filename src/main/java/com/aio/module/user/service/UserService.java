@@ -134,8 +134,8 @@ public class UserService {
         UserEntity user = originalUser.deepCopy();
 
         // 更新字段（仅更新非空值）
-        if (request.getUsername() != null) {
-            user.setUserName(request.getUsername());
+        if (request.getUserName() != null) {
+            user.setUserName(request.getUserName());
         }
         if (request.getDisplayName() != null) {
             user.setDisplayName(request.getDisplayName());
