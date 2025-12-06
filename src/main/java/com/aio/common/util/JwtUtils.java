@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * JWT工具类
@@ -59,20 +60,51 @@ public class JwtUtils {
     }
 
     /**
+     * 检查token是否为空或空白
+     * @param token JWT令牌
+     * @return 是否为空或空白
+     */
+    private boolean isTokenBlank(String token) {
+        return token == null || token.trim().isEmpty();
+    }
+
+    /**
      * 从令牌中解析Claims
      * @param token JWT令牌
-     * @return Claims
+     * @return Optional包装的Claims，解析失败返回empty
      */
-    private Claims getClaimsFromToken(String token) {
+    private Optional<Claims> getClaimsFromToken(String token) {
+        // 防御空token
+        if (isTokenBlank(token)) {
+            log.warn("JWT令牌为空或空白");
+            return Optional.empty();
+        }
+
         try {
-            return Jwts.parser()
+            Claims claims = Jwts.parser()
                     .verifyWith(getSignKey())
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
+            return Optional.ofNullable(claims);
+        } catch (io.jsonwebtoken.MalformedJwtException e) {
+            log.warn("JWT令牌格式错误: {}", e.getMessage());
+            return Optional.empty();
+        } catch (io.jsonwebtoken.security.SignatureException e) {
+            log.warn("JWT令牌签名验证失败: {}", e.getMessage());
+            return Optional.empty();
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.warn("JWT令牌已过期: {}", e.getMessage());
+            return Optional.empty();
+        } catch (io.jsonwebtoken.UnsupportedJwtException e) {
+            log.warn("不支持的JWT令牌: {}", e.getMessage());
+            return Optional.empty();
+        } catch (IllegalArgumentException e) {
+            log.warn("JWT令牌参数非法: {}", e.getMessage());
+            return Optional.empty();
         } catch (Exception e) {
             log.error("解析JWT令牌失败: {}", e.getMessage());
-            return Jwts.claims().build(); // 返回空的Claims对象而不是null
+            return Optional.empty();
         }
     }
 
@@ -80,21 +112,29 @@ public class JwtUtils {
     /**
      * 解析JWT令牌获取用户ID
      * @param token JWT令牌
-     * @return 用户ID
+     * @return 用户ID，解析失败返回null
      */
     public String getUserIdFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims != null ? claims.getSubject() : null;
+        if (isTokenBlank(token)) {
+            return null;
+        }
+        return getClaimsFromToken(token)
+                .map(Claims::getSubject)
+                .orElse(null);
     }
 
     /**
      * 解析JWT令牌获取用户角色
      * @param token JWT令牌
-     * @return 用户角色
+     * @return 用户角色，解析失败返回null
      */
     public String getRoleFromToken(String token) {
-        Claims claims = getClaimsFromToken(token);
-        return claims != null ? claims.get("role", String.class) : null;
+        if (isTokenBlank(token)) {
+            return null;
+        }
+        return getClaimsFromToken(token)
+                .map(claims -> claims.get("role", String.class))
+                .orElse(null);
     }
 
     /**
@@ -103,13 +143,22 @@ public class JwtUtils {
      * @return 是否有效
      */
     public boolean validateToken(String token) {
+        // 防御空token
+        if (isTokenBlank(token)) {
+            return false;
+        }
+
         try {
-            Claims claims = getClaimsFromToken(token);
-            if (claims == null) {
+            Optional<Claims> claimsOpt = getClaimsFromToken(token);
+            if (claimsOpt.isEmpty()) {
                 return false;
             }
-            // 检查是否过期
-            Date expiration = claims.getExpiration();
+            // 检查是否过期，防御expiration为null的情况
+            Date expiration = claimsOpt.get().getExpiration();
+            if (expiration == null) {
+                log.warn("JWT令牌缺少过期时间");
+                return false;
+            }
             return expiration.after(new Date());
         } catch (Exception e) {
             log.error("验证JWT令牌失败: {}", e.getMessage());
