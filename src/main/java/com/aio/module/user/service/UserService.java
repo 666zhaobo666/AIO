@@ -23,8 +23,8 @@ import java.time.LocalDateTime;
 public class UserService {
     private final UserRepository userRepository;
     private final UserPasswordRepository userPasswordRepository;
-    private final PasswordEncoder passwordEncoder; // BCrypt加密�?
-    private final UserValidationUtils userValidationUtils; // 校验工具�?
+    private final PasswordEncoder passwordEncoder; // BCrypt加密器
+    private final UserValidationUtils userValidationUtils; // 校验工具类
 
     // 注册
     @Transactional
@@ -51,7 +51,7 @@ public class UserService {
         userValidationUtils.validateGender(user.getGender());
         userValidationUtils.validateRole(user.getRole());
 
-        // 唯一�?
+        // 唯一性
         userValidationUtils.validateUserAccountUniquenessForUpdate(user);
     }
     public void validateUser(UserEntity user, String rawPassword) {
@@ -64,14 +64,14 @@ public class UserService {
         userValidationUtils.validateGender(user.getGender());
         userValidationUtils.validateRole(user.getRole());
 
-        // 唯一�?
+        // 唯一性
         userValidationUtils.validateUserAccountUniqueness(user);
     }
 
     // 登录
     public UserEntity login(String account, String rawPassword) {
         UserEntity user = findUserByAccount(account);
-        // 用户不存�?
+        // 用户不存在
         if(user == null) {
             throw new GlobalException(ExceptionEnum.USER_NOT_EXIST);
         }
@@ -79,7 +79,7 @@ public class UserService {
         if (!passwordEncoder.matches(rawPassword, userPasswordRepository.findPasswordByUserId(user.getUserId()))) {
             throw new GlobalException(ExceptionEnum.USER_PASSWORD_ERROR);
         }
-        // 更新最后登录时�?
+        // 更新最后登录时间
         user.setLastLoginTime(LocalDateTime.now());
         userRepository.save(user);
         return user;
@@ -89,7 +89,7 @@ public class UserService {
     @Transactional
     public void updatePassword(Integer userId, String oldPassword, String newPassword) {
 
-        // 验证旧密�?
+        // 验证旧密码
         UserPasswordEntity userPassword = userPasswordRepository.findByUserId(userId)
                 .orElseThrow(() -> new GlobalException(ExceptionEnum.USER_PASSWORD_NOT_EXIST));
 
@@ -106,7 +106,7 @@ public class UserService {
     // 删除用户（权限控制：管理员可删除所有用户，普通用户仅可删除自己）
     @Transactional
     public void deleteUser(Integer targetUserId, Integer currentUserId, String currentRole) {
-        // 检查当前用户是否为管理�?
+        // 检查当前用户是否为管理员
         boolean isAdmin = UserRoleEnum.ADMIN.getValue().equals(currentRole);
         // 非管理员只能删除自己
         if (!isAdmin && !targetUserId.equals(currentUserId)) {
@@ -121,16 +121,17 @@ public class UserService {
     // 修改用户信息（权限控制：管理员可修改所有用户，普通用户仅可修改自己）
     @Transactional
     public UserEntity updateUserInfo(Integer targetUserId, Integer currentUserId, String currentRole, UpdateUserInfoRequest request) {
-        // 检查当前用户是否为管理�?
+        // 检查当前用户是否为管理员
         boolean isAdmin = UserRoleEnum.ADMIN.getValue().equals(currentRole);
         // 非管理员只能修改自己
         if (!isAdmin && !targetUserId.equals(currentUserId)) {
             throw new GlobalException(ExceptionEnum.USER_NOT_ADMIN);
         }
 
-        // 查找目标用户
-        UserEntity user = userRepository.findById(targetUserId)
+        // 查找目标用户并创建副本
+        UserEntity originalUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new GlobalException(ExceptionEnum.USER_NOT_EXIST));
+        UserEntity user = originalUser.deepCopy();
 
         // 更新字段（仅更新非空值）
         if (request.getUsername() != null) {
@@ -161,9 +162,9 @@ public class UserService {
     /**
      * 根据用户ID获取用户信息
      *
-     * @param userId 用户唯一标识�?
-     * @return ModelApiResponse 包含用户信息的响应对�?
-     * @throws GlobalException 当用户不存在时抛�?USER_NOT_EXIST 异常
+     * @param userId 用户唯一标识符
+     * @return ModelApiResponse 包含用户信息的响应对象
+     * @throws GlobalException 当用户不存在时抛出USER_NOT_EXIST 异常
      */
     public ModelApiResponse getUserInfo(Integer userId) {
         UserEntity user = userRepository.findById(userId)

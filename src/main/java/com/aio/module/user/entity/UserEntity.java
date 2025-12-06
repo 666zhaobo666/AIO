@@ -1,8 +1,10 @@
 package com.aio.module.user.entity;
 
+import com.aio.common.exception.GlobalException;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.io.Serializable;
 
 import lombok.Data;
 import lombok.ToString;
@@ -11,7 +13,7 @@ import lombok.ToString;
 @Entity
 @Table(name = "aio_user")
 @ToString
-public class UserEntity {
+public class UserEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer userId;
@@ -48,4 +50,20 @@ public class UserEntity {
 
     @Version
     private Integer version; // 乐观锁
+    
+    // 深拷贝
+    public UserEntity deepCopy() {
+        try {
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(bos);
+            oos.writeObject(this);
+            oos.flush();
+            
+            java.io.ByteArrayInputStream bis = new java.io.ByteArrayInputStream(bos.toByteArray());
+            java.io.ObjectInputStream ois = new java.io.ObjectInputStream(bis);
+            return (UserEntity) ois.readObject();
+        } catch (Exception e) {
+            throw new GlobalException("UserEntity Deep copy failed");
+        }
+    }
 }

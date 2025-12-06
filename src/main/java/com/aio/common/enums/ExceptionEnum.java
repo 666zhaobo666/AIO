@@ -7,6 +7,7 @@ public enum ExceptionEnum {
     SUCCESS(true, 200, "success"),
     UNKNOWN_ERROR(false, 500, "unknown error of User Validation"),
 
+    /* User */
     // User Validation
     USERNAME_VALIDATION_ERROR(false, 400, "用户名格式错误，支持字母、数字、下划线，长度4-16位（例：user123、my_name）"),
     PASSWORD_VALIDATION_ERROR(false, 400, "密码格式错误，支持字母、数字、下划线，长度6-16位（例：pass123、pwd_456）"),
