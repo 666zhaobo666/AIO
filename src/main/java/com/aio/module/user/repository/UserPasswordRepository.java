@@ -7,14 +7,13 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
-public interface UserPasswordRepository extends JpaRepository<UserPasswordEntity, UUID> {
+public interface UserPasswordRepository extends JpaRepository<UserPasswordEntity, Integer> {
 
     @Query("SELECT up.password FROM UserPasswordEntity up WHERE up.userId = :userId")
-    String findPasswordByUserId(@Param("userId") UUID userId);
+    String findPasswordByUserId(@Param("userId") Integer userId);
 
-    Optional<UserPasswordEntity> findByUserId(UUID userId);
+    Optional<UserPasswordEntity> findByUserId(Integer userId);
 }
 

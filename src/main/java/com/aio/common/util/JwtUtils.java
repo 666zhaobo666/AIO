@@ -40,7 +40,7 @@ public class JwtUtils {
      * @param role 用户角色
      * @return JWT令牌
      */
-    public String generateToken(String userId, String role) {
+    public String generateToken(Integer userId, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("role", role);
@@ -51,7 +51,7 @@ public class JwtUtils {
 
         return Jwts.builder()
                 .claims(claims)
-                .subject(userId)
+                .subject(String.valueOf(userId))
                 .issuedAt(now)
                 .expiration(expiration)
                 .signWith(getSignKey())

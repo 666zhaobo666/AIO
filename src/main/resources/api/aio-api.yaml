@@ -6,6 +6,7 @@ info:
 
 ## endpoints ##
 paths:
+  ## User ##
   # 注册
   /api/user/register:
     post:
@@ -85,8 +86,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            format: uuid
+            type: integer
       responses:
         '200':
           description: 用户删除成功
@@ -95,6 +95,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/ModelApiResponse'
 
+  # 修改用户信息
+  /api/user/update/{userId}:
+    put:
+      operationId: updateUserInfo
+      summary: 修改用户信息（普通用户仅可修改自己，管理员可修改所有用户）
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserInfoRequest'
+      responses:
+        '200':
+          description: 用户信息修改成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelApiResponse'
 
 ## models ##
 components:
@@ -123,7 +151,7 @@ components:
           type: string
           description: 响应消息
           example: "操作成功"
-        ts:
+        timeStamp:
           type: integer
           format: int64
           description: 响应时间戳(毫秒)
@@ -140,10 +168,9 @@ components:
       type: object
       properties:
         userId:
-          type: string
-          format: uuid
+          type: integer
           description: 用户ID
-          example: "5f9b0b0b0b0b0b0b0b0b0b0b"
+          example: "436346"
         userName:
           type: string
           description: 用户名
@@ -217,4 +244,31 @@ components:
           type: string
           minLength: 8
           format: password
+
+    UpdateUserInfoRequest:
+      type: object
+      description: 修改用户信息请求
+      properties:
+        username:
+          type: string
+          maxLength: 100
+          description: 用户名
+        displayName:
+          type: string
+          maxLength: 100
+          description: 显示名称
+        email:
+          type: string
+          maxLength: 100
+          description: 邮箱
+        phone:
+          type: string
+          maxLength: 100
+          description: 手机号
+        occupation:
+          type: string
+          description: 职业
+        signature:
+          type: string
+          description: 个性签名
 
