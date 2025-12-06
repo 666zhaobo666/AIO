@@ -239,7 +239,7 @@ class UserControllerTest {
             request.setNewPassword("newPassword");
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
                 doNothing().when(userService).updatePassword(1, "oldPassword", "newPassword");
 
                 // Act
@@ -264,7 +264,7 @@ class UserControllerTest {
             request.setNewPassword("newPassword");
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(null);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(null);
 
                 // Act
                 ResponseEntity<ModelApiResponse> response = userController.updatePassword(request);
@@ -287,7 +287,7 @@ class UserControllerTest {
             request.setNewPassword("newPassword");
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
                 doThrow(new GlobalException(ExceptionEnum.USER_OLD_PASSWORD_ERROR))
                         .when(userService).updatePassword(1, "wrongOldPassword", "newPassword");
 
@@ -310,8 +310,8 @@ class UserControllerTest {
             Integer userId = 2;
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(UserRoleEnum.ADMIN.getValue());
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.ADMIN.getValue());
                 doNothing().when(userService).deleteUser(userId, 1, UserRoleEnum.ADMIN.getValue());
 
                 // Act
@@ -334,8 +334,8 @@ class UserControllerTest {
             Integer userId = 1;
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(UserRoleEnum.USER.getValue());
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
                 doNothing().when(userService).deleteUser(userId, 1, UserRoleEnum.USER.getValue());
 
                 // Act
@@ -356,8 +356,8 @@ class UserControllerTest {
             Integer userId = 2;
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(null);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(UserRoleEnum.USER.getValue());
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(null);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
 
                 // Act
                 ResponseEntity<ModelApiResponse> response = userController.deleteUser(userId);
@@ -375,8 +375,8 @@ class UserControllerTest {
             Integer userId = 2;
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(null);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(null);
 
                 // Act
                 ResponseEntity<ModelApiResponse> response = userController.deleteUser(userId);
@@ -394,8 +394,8 @@ class UserControllerTest {
             Integer userId = 2;
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(UserRoleEnum.USER.getValue());
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
                 doThrow(new GlobalException(ExceptionEnum.USER_NOT_ADMIN))
                         .when(userService).deleteUser(userId, 1, UserRoleEnum.USER.getValue());
 
@@ -422,8 +422,8 @@ class UserControllerTest {
             request.setSignature("New Signature");
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(UserRoleEnum.USER.getValue());
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
                 when(userService.updateUserInfo(userId, 1, UserRoleEnum.USER.getValue(), request))
                         .thenReturn(testUser);
 
@@ -456,8 +456,8 @@ class UserControllerTest {
             updatedUser.setEmail("newemail@example.com");
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(UserRoleEnum.ADMIN.getValue());
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.ADMIN.getValue());
                 when(userService.updateUserInfo(userId, 1, UserRoleEnum.ADMIN.getValue(), request))
                         .thenReturn(updatedUser);
 
@@ -479,8 +479,8 @@ class UserControllerTest {
             request.setDisplayName("Updated Name");
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(null);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(UserRoleEnum.USER.getValue());
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(null);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
 
                 // Act
                 ResponseEntity<ModelApiResponse> response = userController.updateUserInfo(userId, request);
@@ -500,8 +500,8 @@ class UserControllerTest {
             request.setDisplayName("Updated Name");
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(null);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(null);
 
                 // Act
                 ResponseEntity<ModelApiResponse> response = userController.updateUserInfo(userId, request);
@@ -521,8 +521,8 @@ class UserControllerTest {
             request.setDisplayName("Updated Name");
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(UserRoleEnum.USER.getValue());
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
                 when(userService.updateUserInfo(userId, 1, UserRoleEnum.USER.getValue(), request))
                         .thenThrow(new GlobalException(ExceptionEnum.USER_NOT_ADMIN));
 
@@ -542,8 +542,8 @@ class UserControllerTest {
             request.setUserName("existingUser");
 
             try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-                mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(1);
-                mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(UserRoleEnum.USER.getValue());
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
                 when(userService.updateUserInfo(userId, 1, UserRoleEnum.USER.getValue(), request))
                         .thenThrow(new GlobalException(ExceptionEnum.USERNAME_ALREADY_EXIST));
 
