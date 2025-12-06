@@ -176,15 +176,15 @@
                 <version>7.3.0</version>
                 <executions>
                     <execution>
-                        <id>generate-user-api</id>
+                        <id>generate-api</id>
                         <phase>generate-sources</phase>
                         <goals><goal>generate</goal></goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/src/main/resources/openapi/user-api.yaml</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/api/aio-api.yaml</inputSpec>
                             <generatorName>spring</generatorName>
-                            <apiPackage>com.aio.api.user</apiPackage>
-                            <modelPackage>com.aio.api.user.model</modelPackage>
-                            <output>${project.build.directory}/generated-sources/openapi-user</output>
+                            <apiPackage>com.aio.api</apiPackage>
+                            <modelPackage>com.aio.api.model</modelPackage>
+                            <output>${project.build.directory}/generated-sources/openapi</output>
                             <configOptions>
                                 <interfaceOnly>true</interfaceOnly>
                                 <useSpringBoot3>true</useSpringBoot3>

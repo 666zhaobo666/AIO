@@ -1,8 +1,8 @@
 package com.aio.common.security;
 
-import com.aio.api.user.model.UserApiResponse;
+import com.aio.api.model.ModelApiResponse;
+import com.aio.common.enums.ExceptionEnum;
 import com.aio.common.util.JwtUtils;
-import com.aio.module.user.enums.UserExceptionEnum;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -34,8 +34,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     // 无需JWT认证的公开路径
     private static final List<String> PUBLIC_PATHS = List.of(
-        "/api/users/register",
-        "/api/users/login",
+        "/api/user/register",
+        "/api/user/login",
         "/error",
         "/swagger-ui",
         "/v3/api-docs",
@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // 如果令牌无效
             if (token == null || !jwtUtils.validateToken(token)) {
-                sendErrorResponse(response, UserExceptionEnum.AUTHORIZATION_FAILED);
+                sendErrorResponse(response, ExceptionEnum.AUTHORIZATION_FAILED);
                 return;
             }
 
@@ -84,12 +84,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 log.debug("已设置JWT认证，用户ID: {}, 角色: {}", userId, role);
             } else {
-                sendErrorResponse(response, UserExceptionEnum.AUTHORIZATION_FAILED);
+                sendErrorResponse(response, ExceptionEnum.AUTHORIZATION_FAILED);
                 return;
             }
         } catch (Exception e) {
             log.error("JWT认证失败: {}", e.getMessage());
-            sendErrorResponse(response, UserExceptionEnum.AUTHORIZATION_FAILED);
+            sendErrorResponse(response, ExceptionEnum.AUTHORIZATION_FAILED);
             return;
         }
 
@@ -118,13 +118,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /**
      * 发送错误响应
      */
-    private void sendErrorResponse(HttpServletResponse response, UserExceptionEnum exceptionEnum) throws IOException {
+    private void sendErrorResponse(HttpServletResponse response, ExceptionEnum exceptionEnum) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(exceptionEnum.getCode());
 
-        UserApiResponse apiResponse = new UserApiResponse();
+        ModelApiResponse apiResponse = new ModelApiResponse();
         apiResponse.setCode(exceptionEnum.getCode());
-        apiResponse.setMessage(exceptionEnum.getMessage());
+        apiResponse.setMsg(exceptionEnum.getMessage());
+        apiResponse.setSuccess(false);
+        apiResponse.setData(null);
 
         ObjectMapper objectMapper = new ObjectMapper();
         response.getWriter().write(objectMapper.writeValueAsString(apiResponse));

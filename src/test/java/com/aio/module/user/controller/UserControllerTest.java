@@ -1,11 +1,16 @@
 package com.aio.module.user.controller;
 
-import com.aio.api.user.model.*;
+import com.aio.api.model.*;
+import com.aio.common.enums.ExceptionEnum;
+import com.aio.common.exception.GlobalException;
 import com.aio.common.security.SecurityContextUtils;
 import com.aio.common.util.JwtUtils;
 import com.aio.module.user.entity.UserEntity;
+import com.aio.module.user.enums.UserRoleEnum;
 import com.aio.module.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,17 +21,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDate;
-import java.util.UUID;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * 用户控制器测试
- */
 @ExtendWith(MockitoExtension.class)
+@DisplayName("UserController 单元测试")
 class UserControllerTest {
 
     @Mock
@@ -39,271 +41,517 @@ class UserControllerTest {
     private UserController userController;
 
     private UserEntity testUser;
-    private UserRegisterRequest registerRequest;
-    private UserLoginRequest loginRequest;
 
     @BeforeEach
     void setUp() {
         testUser = new UserEntity();
-        testUser.setUserId(UUID.randomUUID());
-        testUser.setUsername("testuser");
-        testUser.setName("Test User");
+        testUser.setUserId(1);
+        testUser.setUserName("testuser");
+        testUser.setDisplayName("Test User");
         testUser.setEmail("test@example.com");
         testUser.setPhone("13800138000");
         testUser.setGender("M");
-        testUser.setRole("USER");
+        testUser.setBirthday(LocalDate.of(1990, 1, 1));
+        testUser.setRole(UserRoleEnum.USER.getValue());
         testUser.setStatus(1);
-
-        registerRequest = new UserRegisterRequest();
-        registerRequest.setUsername("testuser");
-        registerRequest.setName("Test User");
-        registerRequest.setEmail("test@example.com");
-        registerRequest.setPhone("13800138000");
-        registerRequest.setPassword("password123");
-        registerRequest.setGender("M");
-        registerRequest.setBirthday(LocalDate.of(1990, 1, 1));
-        registerRequest.setOccupation("Engineer");
-        registerRequest.setSignature("Test signature");
-
-        loginRequest = new UserLoginRequest();
-        loginRequest.setAccount("testuser");
-        loginRequest.setPassword("password123");
+        testUser.setRegisterTime(LocalDateTime.now());
     }
 
-    // ==================== 注册测试 ====================
-    @Test
-    void testRegisterSuccess() {
-        // 测试注册成功
-        when(userService.register(any(UserEntity.class), anyString())).thenReturn(testUser);
+    @Nested
+    @DisplayName("register 注册接口测试")
+    class RegisterTests {
 
-        ResponseEntity<UserApiResponse> response = userController.register(registerRequest);
+        @Test
+        @DisplayName("注册成功")
+        void register_Success() {
+            // Arrange
+            UserRegisterRequest request = new UserRegisterRequest();
+            request.setUserName("newuser");
+            request.setDisplayName("New User");
+            request.setEmail("new@example.com");
+            request.setPhone("13900139000");
+            request.setPassword("password123");
+            request.setGender("M");
+            request.setBirthday(LocalDate.of(1995, 5, 15));
+            request.setOccupation("Engineer");
+            request.setSignature("Hello World");
 
-        assertNotNull(response);
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(201, response.getBody().getCode());
-        assertEquals("用户注册成功", response.getBody().getMessage());
-        assertNotNull(response.getBody().getData());
+            when(userService.register(any(UserEntity.class), eq("password123"))).thenReturn(testUser);
 
-        verify(userService).register(any(UserEntity.class), eq("password123"));
+            // Act
+            ResponseEntity<ModelApiResponse> response = userController.register(request);
+
+            // Assert
+            assertNotNull(response);
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(201, response.getBody().getCode());
+            assertEquals("用户注册成功", response.getBody().getMsg());
+            assertTrue(response.getBody().getSuccess());
+            assertTrue(response.getBody().getData().isPresent());
+        }
+
+        @Test
+        @DisplayName("注册成功 - 无可选字段")
+        void register_SuccessWithoutOptionalFields() {
+            // Arrange
+            UserRegisterRequest request = new UserRegisterRequest();
+            request.setUserName("newuser");
+            request.setDisplayName("New User");
+            request.setEmail("new@example.com");
+            request.setPassword("password123");
+            // 不设置可选字段：phone, gender, birthday, occupation, signature
+
+            when(userService.register(any(UserEntity.class), eq("password123"))).thenReturn(testUser);
+
+            // Act
+            ResponseEntity<ModelApiResponse> response = userController.register(request);
+
+            // Assert
+            assertNotNull(response);
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(201, response.getBody().getCode());
+        }
+
+        @Test
+        @DisplayName("注册失败 - 用户名已存在")
+        void register_UsernameExists() {
+            // Arrange
+            UserRegisterRequest request = new UserRegisterRequest();
+            request.setUserName("existinguser");
+            request.setDisplayName("Existing User");
+            request.setEmail("existing@example.com");
+            request.setPassword("password123");
+
+            when(userService.register(any(UserEntity.class), eq("password123")))
+                    .thenThrow(new GlobalException(ExceptionEnum.USERNAME_ALREADY_EXIST));
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userController.register(request));
+            assertEquals(ExceptionEnum.USERNAME_ALREADY_EXIST.getMessage(), exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("注册失败 - 密码格式错误")
+        void register_InvalidPassword() {
+            // Arrange
+            UserRegisterRequest request = new UserRegisterRequest();
+            request.setUserName("newuser");
+            request.setDisplayName("New User");
+            request.setEmail("new@example.com");
+            request.setPassword("123");
+
+            when(userService.register(any(UserEntity.class), eq("123")))
+                    .thenThrow(new GlobalException(ExceptionEnum.PASSWORD_VALIDATION_ERROR));
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userController.register(request));
+            assertEquals(ExceptionEnum.PASSWORD_VALIDATION_ERROR.getMessage(), exception.getMessage());
+        }
     }
 
-    @Test
-    void testRegisterWithMinimalInfo() {
-        // 测试最小信息注册
-        UserRegisterRequest minimalRequest = new UserRegisterRequest();
-        minimalRequest.setUsername("newuser");
-        minimalRequest.setName("New User");
-        minimalRequest.setEmail("new@example.com");
-        minimalRequest.setPassword("password123");
+    @Nested
+    @DisplayName("login 登录接口测试")
+    class LoginTests {
 
-        when(userService.register(any(UserEntity.class), anyString())).thenReturn(testUser);
+        @Test
+        @DisplayName("登录成功")
+        void login_Success() {
+            // Arrange
+            UserLoginRequest request = new UserLoginRequest();
+            request.setAccount("testuser");
+            request.setPassword("password123");
 
-        ResponseEntity<UserApiResponse> response = userController.register(minimalRequest);
+            String token = "jwt.token.here";
 
-        assertNotNull(response);
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(userService).register(any(UserEntity.class), eq("password123"));
-    }
+            when(userService.login("testuser", "password123")).thenReturn(testUser);
+            when(jwtUtils.generateToken(testUser.getUserId(), testUser.getRole())).thenReturn(token);
 
-    @Test
-    void testRegisterWithNullGender() {
-        // 测试性别为null的注册
-        registerRequest.setGender(null);
+            // Act
+            ResponseEntity<ModelApiResponse> response = userController.login(request);
 
-        when(userService.register(any(UserEntity.class), anyString())).thenReturn(testUser);
-
-        ResponseEntity<UserApiResponse> response = userController.register(registerRequest);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(userService).register(any(UserEntity.class), anyString());
-    }
-
-    // ==================== 登录测试 ====================
-    @Test
-    void testLoginSuccess() {
-        // 测试登录成功
-        String token = "jwt.token.here";
-
-        when(userService.login("testuser", "password123")).thenReturn(testUser);
-        when(jwtUtils.generateToken(testUser.getUserId().toString(), testUser.getRole()))
-                .thenReturn(token);
-
-        ResponseEntity<LoginResponse> response = userController.login(loginRequest);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(token, response.getBody().getToken());
-        assertEquals(testUser.getUserId(), response.getBody().getUserId());
-        assertEquals(testUser.getUsername(), response.getBody().getUsername());
-        assertEquals(testUser.getRole(), response.getBody().getRole());
-
-        verify(userService).login("testuser", "password123");
-        verify(jwtUtils).generateToken(testUser.getUserId().toString(), testUser.getRole());
-    }
-
-    @Test
-    void testLoginByEmail() {
-        // 测试通过邮箱登录
-        loginRequest.setAccount("test@example.com");
-
-        when(userService.login("test@example.com", "password123")).thenReturn(testUser);
-        when(jwtUtils.generateToken(anyString(), anyString())).thenReturn("token");
-
-        ResponseEntity<LoginResponse> response = userController.login(loginRequest);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(userService).login("test@example.com", "password123");
-    }
-
-    @Test
-    void testLoginByPhone() {
-        // 测试通过手机号登录
-        loginRequest.setAccount("13800138000");
-
-        when(userService.login("13800138000", "password123")).thenReturn(testUser);
-        when(jwtUtils.generateToken(anyString(), anyString())).thenReturn("token");
-
-        ResponseEntity<LoginResponse> response = userController.login(loginRequest);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(userService).login("13800138000", "password123");
-    }
-
-    // ==================== 修改密码测试 ====================
-    @Test
-    void testUpdatePasswordSuccess() {
-        // 测试修改密码成功
-        UpdatePasswordRequest updateRequest = new UpdatePasswordRequest();
-        updateRequest.setOldPassword("oldPassword");
-        updateRequest.setNewPassword("newPassword");
-
-        UUID userId = testUser.getUserId();
-
-        try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-            mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(userId);
-
-            doNothing().when(userService).updatePassword(userId, "oldPassword", "newPassword");
-
-            ResponseEntity<UserApiResponse> response = userController.updatePassword(updateRequest);
-
+            // Assert
             assertNotNull(response);
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(200, response.getBody().getCode());
-            assertEquals("密码修改成功", response.getBody().getMessage());
+            assertEquals("登录成功", response.getBody().getMsg());
+            assertTrue(response.getBody().getSuccess());
+            assertTrue(response.getBody().getData().isPresent());
 
-            verify(userService).updatePassword(userId, "oldPassword", "newPassword");
+            Object data = response.getBody().getData().get();
+            assertTrue(data instanceof UserLoginDataResponse);
+            UserLoginDataResponse loginData = (UserLoginDataResponse) data;
+            assertEquals(token, loginData.getToken());
+            assertEquals(testUser.getUserId(), loginData.getUserId());
+            assertEquals(testUser.getUserName(), loginData.getUserName());
+            assertEquals(testUser.getRole(), loginData.getRole());
+        }
+
+        @Test
+        @DisplayName("登录失败 - 用户不存在")
+        void login_UserNotExist() {
+            // Arrange
+            UserLoginRequest request = new UserLoginRequest();
+            request.setAccount("nonexistent");
+            request.setPassword("password123");
+
+            when(userService.login("nonexistent", "password123"))
+                    .thenThrow(new GlobalException(ExceptionEnum.USER_NOT_EXIST));
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userController.login(request));
+            assertEquals(ExceptionEnum.USER_NOT_EXIST.getMessage(), exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("登录失败 - 密码错误")
+        void login_PasswordError() {
+            // Arrange
+            UserLoginRequest request = new UserLoginRequest();
+            request.setAccount("testuser");
+            request.setPassword("wrongpassword");
+
+            when(userService.login("testuser", "wrongpassword"))
+                    .thenThrow(new GlobalException(ExceptionEnum.USER_PASSWORD_ERROR));
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userController.login(request));
+            assertEquals(ExceptionEnum.USER_PASSWORD_ERROR.getMessage(), exception.getMessage());
         }
     }
 
-    @Test
-    void testUpdatePasswordNotAuthenticated() {
-        // 测试未认证时修改密码
-        UpdatePasswordRequest updateRequest = new UpdatePasswordRequest();
-        updateRequest.setOldPassword("oldPassword");
-        updateRequest.setNewPassword("newPassword");
+    @Nested
+    @DisplayName("updatePassword 修改密码接口测试")
+    class UpdatePasswordTests {
 
-        try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-            mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(null);
+        @Test
+        @DisplayName("修改密码成功")
+        void updatePassword_Success() {
+            // Arrange
+            UpdatePasswordRequest request = new UpdatePasswordRequest();
+            request.setOldPassword("oldPassword");
+            request.setNewPassword("newPassword");
 
-            ResponseEntity<UserApiResponse> response = userController.updatePassword(updateRequest);
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                doNothing().when(userService).updatePassword(1, "oldPassword", "newPassword");
 
-            assertNotNull(response);
-            assertEquals(401, response.getStatusCode().value());
+                // Act
+                ResponseEntity<ModelApiResponse> response = userController.updatePassword(request);
 
-            assertNotNull(response.getBody());
-            assertEquals(401, response.getBody().getCode());
-            assertEquals("未认证或认证已过期", response.getBody().getMessage());
+                // Assert
+                assertNotNull(response);
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                assertNotNull(response.getBody());
+                assertEquals(200, response.getBody().getCode());
+                assertEquals("密码修改成功", response.getBody().getMsg());
+                assertTrue(response.getBody().getSuccess());
+            }
+        }
 
-            verify(userService, never()).updatePassword(any(), anyString(), anyString());
+        @Test
+        @DisplayName("修改密码失败 - 未认证")
+        void updatePassword_Unauthorized() {
+            // Arrange
+            UpdatePasswordRequest request = new UpdatePasswordRequest();
+            request.setOldPassword("oldPassword");
+            request.setNewPassword("newPassword");
+
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(null);
+
+                // Act
+                ResponseEntity<ModelApiResponse> response = userController.updatePassword(request);
+
+                // Assert
+                assertNotNull(response);
+                assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+                assertNotNull(response.getBody());
+                assertEquals(401, response.getBody().getCode());
+                assertEquals("未认证或认证已过期", response.getBody().getMsg());
+            }
+        }
+
+        @Test
+        @DisplayName("修改密码失败 - 旧密码错误")
+        void updatePassword_OldPasswordError() {
+            // Arrange
+            UpdatePasswordRequest request = new UpdatePasswordRequest();
+            request.setOldPassword("wrongOldPassword");
+            request.setNewPassword("newPassword");
+
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                doThrow(new GlobalException(ExceptionEnum.USER_OLD_PASSWORD_ERROR))
+                        .when(userService).updatePassword(1, "wrongOldPassword", "newPassword");
+
+                // Act & Assert
+                GlobalException exception = assertThrows(GlobalException.class,
+                        () -> userController.updatePassword(request));
+                assertEquals(ExceptionEnum.USER_OLD_PASSWORD_ERROR.getMessage(), exception.getMessage());
+            }
         }
     }
 
-    // ==================== 删除用户测试 ====================
-    @Test
-    void testDeleteUserAsAdmin() {
-        // 测试管理员删除用户
-        UUID targetUserId = UUID.randomUUID();
-        UUID currentUserId = testUser.getUserId();
-        String currentRole = "ADMIN";
+    @Nested
+    @DisplayName("deleteUser 删除用户接口测试")
+    class DeleteUserTests {
 
-        try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-            mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(currentUserId);
-            mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(currentRole);
+        @Test
+        @DisplayName("管理员删除用户成功")
+        void deleteUser_AdminSuccess() {
+            // Arrange
+            Integer userId = 2;
 
-            doNothing().when(userService).deleteUser(targetUserId, currentUserId, currentRole);
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.ADMIN.getValue());
+                doNothing().when(userService).deleteUser(userId, 1, UserRoleEnum.ADMIN.getValue());
 
-            ResponseEntity<Void> response = userController.deleteUser(targetUserId);
+                // Act
+                ResponseEntity<ModelApiResponse> response = userController.deleteUser(userId);
 
-            assertNotNull(response);
-            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+                // Assert
+                assertNotNull(response);
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                assertNotNull(response.getBody());
+                assertEquals(200, response.getBody().getCode());
+                assertEquals("用户删除成功", response.getBody().getMsg());
+                assertTrue(response.getBody().getSuccess());
+            }
+        }
 
-            verify(userService).deleteUser(targetUserId, currentUserId, currentRole);
+        @Test
+        @DisplayName("普通用户删除自己成功")
+        void deleteUser_SelfDeleteSuccess() {
+            // Arrange
+            Integer userId = 1;
+
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
+                doNothing().when(userService).deleteUser(userId, 1, UserRoleEnum.USER.getValue());
+
+                // Act
+                ResponseEntity<ModelApiResponse> response = userController.deleteUser(userId);
+
+                // Assert
+                assertNotNull(response);
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                assertNotNull(response.getBody());
+                assertEquals(200, response.getBody().getCode());
+            }
+        }
+
+        @Test
+        @DisplayName("删除用户失败 - 未认证（userId为null）")
+        void deleteUser_UnauthorizedNullUserId() {
+            // Arrange
+            Integer userId = 2;
+
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(null);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
+
+                // Act
+                ResponseEntity<ModelApiResponse> response = userController.deleteUser(userId);
+
+                // Assert
+                assertNotNull(response);
+                assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+            }
+        }
+
+        @Test
+        @DisplayName("删除用户失败 - 未认证（role为null）")
+        void deleteUser_UnauthorizedNullRole() {
+            // Arrange
+            Integer userId = 2;
+
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(null);
+
+                // Act
+                ResponseEntity<ModelApiResponse> response = userController.deleteUser(userId);
+
+                // Assert
+                assertNotNull(response);
+                assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+            }
+        }
+
+        @Test
+        @DisplayName("删除用户失败 - 权限不足")
+        void deleteUser_PermissionDenied() {
+            // Arrange
+            Integer userId = 2;
+
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
+                doThrow(new GlobalException(ExceptionEnum.USER_NOT_ADMIN))
+                        .when(userService).deleteUser(userId, 1, UserRoleEnum.USER.getValue());
+
+                // Act & Assert
+                GlobalException exception = assertThrows(GlobalException.class,
+                        () -> userController.deleteUser(userId));
+                assertEquals(ExceptionEnum.USER_NOT_ADMIN.getMessage(), exception.getMessage());
+            }
         }
     }
 
-    @Test
-    void testDeleteSelfAsUser() {
-        // 测试普通用户删除自己
-        UUID userId = testUser.getUserId();
-        String currentRole = "USER";
+    @Nested
+    @DisplayName("updateUserInfo 修改用户信息接口测试")
+    class UpdateUserInfoTests {
 
-        try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-            mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(userId);
-            mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(currentRole);
+        @Test
+        @DisplayName("修改用户信息成功")
+        void updateUserInfo_Success() {
+            // Arrange
+            Integer userId = 1;
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setDisplayName("Updated Name");
+            request.setOccupation("Developer");
+            request.setSignature("New Signature");
 
-            doNothing().when(userService).deleteUser(userId, userId, currentRole);
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
+                when(userService.updateUserInfo(userId, 1, UserRoleEnum.USER.getValue(), request))
+                        .thenReturn(testUser);
 
-            ResponseEntity<Void> response = userController.deleteUser(userId);
+                // Act
+                ResponseEntity<ModelApiResponse> response = userController.updateUserInfo(userId, request);
 
-            assertNotNull(response);
-            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-
-            verify(userService).deleteUser(userId, userId, currentRole);
+                // Assert
+                assertNotNull(response);
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+                assertNotNull(response.getBody());
+                assertEquals(200, response.getBody().getCode());
+                assertEquals("用户信息修改成功", response.getBody().getMsg());
+                assertTrue(response.getBody().getSuccess());
+                assertTrue(response.getBody().getData().isPresent());
+            }
         }
-    }
 
-    @Test
-    void testDeleteUserNotAuthenticated() {
-        // 测试未认证时删除用户
-        UUID targetUserId = UUID.randomUUID();
+        @Test
+        @DisplayName("管理员修改其他用户信息成功")
+        void updateUserInfo_AdminUpdateOthers() {
+            // Arrange
+            Integer userId = 2;
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setUserName("newUsername");
+            request.setEmail("newemail@example.com");
 
-        try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-            mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(null);
-            mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(null);
+            UserEntity updatedUser = new UserEntity();
+            updatedUser.setUserId(2);
+            updatedUser.setUserName("newUsername");
+            updatedUser.setEmail("newemail@example.com");
 
-            ResponseEntity<Void> response = userController.deleteUser(targetUserId);
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.ADMIN.getValue());
+                when(userService.updateUserInfo(userId, 1, UserRoleEnum.ADMIN.getValue(), request))
+                        .thenReturn(updatedUser);
 
-            assertNotNull(response);
-            assertEquals(401, response.getStatusCode().value());
+                // Act
+                ResponseEntity<ModelApiResponse> response = userController.updateUserInfo(userId, request);
 
-
-            verify(userService, never()).deleteUser(any(), any(), anyString());
+                // Assert
+                assertNotNull(response);
+                assertEquals(HttpStatus.OK, response.getStatusCode());
+            }
         }
-    }
 
-    @Test
-    void testDeleteUserNoRole() {
-        // 测试缺少角色信息时删除用户
-        UUID targetUserId = UUID.randomUUID();
-        UUID currentUserId = testUser.getUserId();
+        @Test
+        @DisplayName("修改用户信息失败 - 未认证（userId为null）")
+        void updateUserInfo_UnauthorizedNullUserId() {
+            // Arrange
+            Integer userId = 1;
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setDisplayName("Updated Name");
 
-        try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
-            mockedStatic.when(SecurityContextUtils::getCurrentUserId).thenReturn(currentUserId);
-            mockedStatic.when(SecurityContextUtils::getCurrentUserRole).thenReturn(null);
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(null);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
 
-            ResponseEntity<Void> response = userController.deleteUser(targetUserId);
+                // Act
+                ResponseEntity<ModelApiResponse> response = userController.updateUserInfo(userId, request);
 
-            assertNotNull(response);
-            assertEquals(401, response.getStatusCode().value());
+                // Assert
+                assertNotNull(response);
+                assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+            }
+        }
 
+        @Test
+        @DisplayName("修改用户信息失败 - 未认证（role为null）")
+        void updateUserInfo_UnauthorizedNullRole() {
+            // Arrange
+            Integer userId = 1;
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setDisplayName("Updated Name");
 
-            verify(userService, never()).deleteUser(any(), any(), anyString());
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(null);
+
+                // Act
+                ResponseEntity<ModelApiResponse> response = userController.updateUserInfo(userId, request);
+
+                // Assert
+                assertNotNull(response);
+                assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+            }
+        }
+
+        @Test
+        @DisplayName("修改用户信息失败 - 权限不足")
+        void updateUserInfo_PermissionDenied() {
+            // Arrange
+            Integer userId = 2;
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setDisplayName("Updated Name");
+
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
+                when(userService.updateUserInfo(userId, 1, UserRoleEnum.USER.getValue(), request))
+                        .thenThrow(new GlobalException(ExceptionEnum.USER_NOT_ADMIN));
+
+                // Act & Assert
+                GlobalException exception = assertThrows(GlobalException.class,
+                        () -> userController.updateUserInfo(userId, request));
+                assertEquals(ExceptionEnum.USER_NOT_ADMIN.getMessage(), exception.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("修改用户信息失败 - 用户名已存在")
+        void updateUserInfo_UsernameExists() {
+            // Arrange
+            Integer userId = 1;
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setUserName("existingUser");
+
+            try (MockedStatic<SecurityContextUtils> mockedStatic = mockStatic(SecurityContextUtils.class)) {
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserId()).thenReturn(1);
+                mockedStatic.when(() -> SecurityContextUtils.getCurrentUserRole()).thenReturn(UserRoleEnum.USER.getValue());
+                when(userService.updateUserInfo(userId, 1, UserRoleEnum.USER.getValue(), request))
+                        .thenThrow(new GlobalException(ExceptionEnum.USERNAME_ALREADY_EXIST));
+
+                // Act & Assert
+                GlobalException exception = assertThrows(GlobalException.class,
+                        () -> userController.updateUserInfo(userId, request));
+                assertEquals(ExceptionEnum.USERNAME_ALREADY_EXIST.getMessage(), exception.getMessage());
+            }
         }
     }
 }

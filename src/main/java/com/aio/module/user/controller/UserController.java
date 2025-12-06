@@ -1,21 +1,22 @@
 package com.aio.module.user.controller;
 
-import com.aio.api.user.UserApi;
-import com.aio.api.user.model.UserApiResponse;
-import com.aio.api.user.model.LoginResponse;
-import com.aio.api.user.model.UpdatePasswordRequest;
-import com.aio.api.user.model.UserLoginRequest;
-import com.aio.api.user.model.UserRegisterRequest;
+import com.aio.api.UserApi;
+import com.aio.api.model.ModelApiResponse;
+import com.aio.api.model.UserLoginDataResponse;
+import com.aio.api.model.UpdatePasswordRequest;
+import com.aio.api.model.UpdateUserInfoRequest;
+import com.aio.api.model.UserLoginRequest;
+import com.aio.api.model.UserRegisterRequest;
 import com.aio.module.user.enums.UserRoleEnum;
 import com.aio.common.security.SecurityContextUtils;
 import com.aio.module.user.entity.UserEntity;
 import com.aio.module.user.service.UserService;
 import com.aio.common.util.JwtUtils;
 import lombok.RequiredArgsConstructor;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,23 +25,25 @@ public class UserController implements UserApi {
     private final JwtUtils jwtUtils; // JWT工具类（生成/解析令牌）
 
     @Override
-    public ResponseEntity<UserApiResponse> register(UserRegisterRequest request) {
+    public ResponseEntity<ModelApiResponse> register(UserRegisterRequest request) {
         UserEntity user = getUserEntity(request);
         // 调用注册服务（密码明文传入，服务层加密）
         UserEntity userinfo = userService.register(user, request.getPassword());
 
-        UserApiResponse response = new UserApiResponse();
+        ModelApiResponse response = new ModelApiResponse();
         response.setCode(201);
-        response.setMessage("用户注册成功");
-        response.setData(userinfo);
+        response.setMsg("用户注册成功");
+        response.setSuccess(true);
+        response.setTimeStamp(System.currentTimeMillis());
+        response.setData(JsonNullable.of(userinfo));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     private static UserEntity getUserEntity(UserRegisterRequest request) {
         UserEntity user = new UserEntity();
         // 复制请求参数到实体
-        user.setUsername(request.getUsername());
-        user.setName(request.getName());
+        user.setUserName(request.getUserName());
+        user.setDisplayName(request.getDisplayName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setGender(request.getGender() != null ? request.getGender() : null);
@@ -52,41 +55,50 @@ public class UserController implements UserApi {
     }
 
     @Override
-    public ResponseEntity<LoginResponse> login(UserLoginRequest request) {
+    public ResponseEntity<ModelApiResponse> login(UserLoginRequest request) {
         UserEntity user = userService.login(request.getAccount(), request.getPassword());
         // 生成JWT令牌（包含userId和role）
-        String token = jwtUtils.generateToken(user.getUserId().toString(), user.getRole());
+        String token = jwtUtils.generateToken(user.getUserId(), user.getRole());
         // 构建登录响应
-        LoginResponse loginResponse = new LoginResponse();
+        UserLoginDataResponse loginResponse = new UserLoginDataResponse();
         loginResponse.setToken(token);
         loginResponse.setUserId(user.getUserId());
-        loginResponse.setUsername(user.getUsername());
+        loginResponse.setUserName(user.getUserName());
         loginResponse.setRole(user.getRole());
-        return ResponseEntity.ok(loginResponse);
-    }
-
-    @Override
-    public ResponseEntity<UserApiResponse> updatePassword(UpdatePasswordRequest request) {
-        // 从JWT认证上下文中获取当前用户ID
-        UUID currentUserId = SecurityContextUtils.getCurrentUserId();
-        if (currentUserId == null) {
-            UserApiResponse response = new UserApiResponse();
-            response.setCode(401);
-            response.setMessage("未认证或认证已过期");
-            return ResponseEntity.status(401).body(response);
-        }
-        userService.updatePassword(currentUserId, request.getOldPassword(), request.getNewPassword());
-
-        UserApiResponse response = new UserApiResponse();
+        ModelApiResponse response = new ModelApiResponse();
         response.setCode(200);
-        response.setMessage("密码修改成功");
+        response.setMsg("登录成功");
+        response.setSuccess(true);
+        response.setTimeStamp(System.currentTimeMillis());
+        response.setData(JsonNullable.of(loginResponse));
         return ResponseEntity.ok(response);
     }
 
     @Override
-    public ResponseEntity<Void> deleteUser(UUID userId) {
+    public ResponseEntity<ModelApiResponse> updatePassword(UpdatePasswordRequest request) {
+        // 从JWT认证上下文中获取当前用户ID
+        Integer currentUserId = SecurityContextUtils.getCurrentUserId();
+        if (currentUserId == null) {
+            ModelApiResponse response = new ModelApiResponse();
+            response.setCode(401);
+            response.setMsg("未认证或认证已过期");
+
+            return ResponseEntity.status(401).body(response);
+        }
+        userService.updatePassword(currentUserId, request.getOldPassword(), request.getNewPassword());
+
+        ModelApiResponse response = new ModelApiResponse();
+        response.setCode(200);
+        response.setMsg("密码修改成功");
+        response.setSuccess(true);
+        response.setTimeStamp(System.currentTimeMillis());
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<ModelApiResponse> deleteUser(Integer userId) {
         // 从JWT认证上下文中获取当前用户ID和角色
-        UUID currentUserId = SecurityContextUtils.getCurrentUserId();
+        Integer currentUserId = SecurityContextUtils.getCurrentUserId();
         String currentRole = SecurityContextUtils.getCurrentUserRole();
         if (currentUserId == null || currentRole == null) {
             return ResponseEntity.status(401).build();
@@ -94,6 +106,37 @@ public class UserController implements UserApi {
 
         // 调用删除服务
         userService.deleteUser(userId, currentUserId, currentRole);
-        return ResponseEntity.noContent().build();
+        ModelApiResponse response = new ModelApiResponse();
+        response.setCode(200);
+        response.setMsg("用户删除成功");
+        response.setSuccess(true);
+        response.setTimeStamp(System.currentTimeMillis());
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<ModelApiResponse> updateUserInfo(Integer userId, UpdateUserInfoRequest request) {
+        // 从JWT认证上下文中获取当前用户ID和角色
+        Integer currentUserId = SecurityContextUtils.getCurrentUserId();
+        String currentRole = SecurityContextUtils.getCurrentUserRole();
+        if (currentUserId == null || currentRole == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        // 调用修改用户信息服务
+        UserEntity updatedUser = userService.updateUserInfo(
+                userId,
+                currentUserId,
+                currentRole,
+                request
+        );
+
+        ModelApiResponse response = new ModelApiResponse();
+        response.setCode(200);
+        response.setMsg("用户信息修改成功");
+        response.setSuccess(true);
+        response.setTimeStamp(System.currentTimeMillis());
+        response.setData(JsonNullable.of(updatedUser));
+        return ResponseEntity.ok(response);
     }
 }

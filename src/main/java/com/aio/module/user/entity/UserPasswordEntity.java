@@ -1,39 +1,37 @@
 package com.aio.module.user.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
+import lombok.Getter;
+import lombok.Setter;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "aio_user_password")
-@EqualsAndHashCode(exclude = {"createdTime", "updatedTime", "version"})
 public class UserPasswordEntity {
-    @Id
-    private UUID userId;
 
-    @Column(name = "password", nullable = false)
+    @Id
+    private Integer userId;
+
+    @Column(nullable = false)
     private String password;
 
-    @Column(name = "created_time", nullable = false)
+    @Column(nullable = false)
     private LocalDateTime createdTime = LocalDateTime.now();
 
-    @Column(name = "updated_time")
     private LocalDateTime updatedTime;
 
     @Version
     private Integer version;
 
+    public UserPasswordEntity() {}
 
-    public UserPasswordEntity(UUID userId, String encodePassword) {
+    public UserPasswordEntity(Integer userId, String password) {
         this.userId = userId;
-        this.password = encodePassword;
+        this.password = password;
+        this.createdTime = LocalDateTime.now();
         this.updatedTime = LocalDateTime.now();
     }
 
-    public UserPasswordEntity() {
-    }
 }

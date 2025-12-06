@@ -2,209 +2,393 @@ package com.aio.common.security;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Collections;
-import java.util.UUID;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * 安全上下文工具类测试
- */
+@DisplayName("SecurityContextUtils 单元测试")
 class SecurityContextUtilsTest {
-
-    private UUID testUserId;
-    private String testRole;
 
     @BeforeEach
     void setUp() {
-        // 清空安全上下文
+        // 清除安全上下文
         SecurityContextHolder.clearContext();
-
-        testUserId = UUID.randomUUID();
-        testRole = "USER";
     }
 
     @AfterEach
     void tearDown() {
-        // 测试后清空安全上下文
+        // 测试后清除安全上下文
         SecurityContextHolder.clearContext();
     }
 
-    @Test
-    void testGetCurrentUserIdWhenAuthenticated() {
-        // 设置认证信息
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        testUserId.toString(),
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + testRole))
-                );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        // 测试获取当前用户ID
-        UUID userId = SecurityContextUtils.getCurrentUserId();
-
-        assertNotNull(userId);
-        assertEquals(testUserId, userId);
+    private void setAuthentication(Object principal, List<SimpleGrantedAuthority> authorities) {
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                principal, null, authorities);
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
     }
 
-    @Test
-    void testGetCurrentUserIdWhenNotAuthenticated() {
-        // 测试未认证时获取用户ID
-        UUID userId = SecurityContextUtils.getCurrentUserId();
-        assertNull(userId);
+    @Nested
+    @DisplayName("getCurrentUserId 获取当前用户ID测试")
+    class GetCurrentUserIdTests {
+
+        @Test
+        @DisplayName("成功获取用户ID")
+        void getCurrentUserId_Success() {
+            // Arrange
+            setAuthentication("123", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+            // Act
+            Integer userId = SecurityContextUtils.getCurrentUserId();
+
+            // Assert
+            assertEquals(123, userId);
+        }
+
+        @Test
+        @DisplayName("用户未认证时返回null")
+        void getCurrentUserId_NotAuthenticated() {
+            // 不设置任何认证信息
+
+            // Act
+            Integer userId = SecurityContextUtils.getCurrentUserId();
+
+            // Assert
+            assertNull(userId);
+        }
+
+        @Test
+        @DisplayName("匿名用户时返回null")
+        void getCurrentUserId_AnonymousUser() {
+            // Arrange
+            setAuthentication("anonymousUser", List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
+
+            // Act
+            Integer userId = SecurityContextUtils.getCurrentUserId();
+
+            // Assert
+            assertNull(userId);
+        }
+
+        @Test
+        @DisplayName("principal不是有效数字时返回null")
+        void getCurrentUserId_InvalidPrincipal() {
+            // Arrange
+            setAuthentication("invalidPrincipal", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+            // Act
+            Integer userId = SecurityContextUtils.getCurrentUserId();
+
+            // Assert
+            assertNull(userId);
+        }
+
+        @Test
+        @DisplayName("空Authentication时返回null")
+        void getCurrentUserId_NullAuthentication() {
+            // Arrange - 设置空的SecurityContext
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(null);
+            SecurityContextHolder.setContext(context);
+
+            // Act
+            Integer userId = SecurityContextUtils.getCurrentUserId();
+
+            // Assert
+            assertNull(userId);
+        }
     }
 
-    @Test
-    void testGetCurrentUserIdWhenAnonymous() {
-        // 设置匿名用户
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        "anonymousUser",
-                        null,
-                        Collections.emptyList()
-                );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+    @Nested
+    @DisplayName("getCurrentUserRole 获取当前用户角色测试")
+    class GetCurrentUserRoleTests {
 
-        // 测试匿名用户时获取用户ID
-        UUID userId = SecurityContextUtils.getCurrentUserId();
-        assertNull(userId);
+        @Test
+        @DisplayName("成功获取用户角色 - USER")
+        void getCurrentUserRole_User() {
+            // Arrange
+            setAuthentication("1", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+            // Act
+            String role = SecurityContextUtils.getCurrentUserRole();
+
+            // Assert
+            assertEquals("USER", role);
+        }
+
+        @Test
+        @DisplayName("成功获取用户角色 - ADMIN")
+        void getCurrentUserRole_Admin() {
+            // Arrange
+            setAuthentication("1", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+
+            // Act
+            String role = SecurityContextUtils.getCurrentUserRole();
+
+            // Assert
+            assertEquals("ADMIN", role);
+        }
+
+        @Test
+        @DisplayName("用户未认证时返回null")
+        void getCurrentUserRole_NotAuthenticated() {
+            // 不设置任何认证信息
+
+            // Act
+            String role = SecurityContextUtils.getCurrentUserRole();
+
+            // Assert
+            assertNull(role);
+        }
+
+        @Test
+        @DisplayName("没有ROLE_前缀的权限返回null")
+        void getCurrentUserRole_NoRolePrefix() {
+            // Arrange
+            setAuthentication("1", List.of(new SimpleGrantedAuthority("USER")));
+
+            // Act
+            String role = SecurityContextUtils.getCurrentUserRole();
+
+            // Assert
+            assertNull(role);
+        }
+
+        @Test
+        @DisplayName("多个权限时返回第一个ROLE_角色")
+        void getCurrentUserRole_MultipleAuthorities() {
+            // Arrange
+            setAuthentication("1", List.of(
+                    new SimpleGrantedAuthority("READ"),
+                    new SimpleGrantedAuthority("ROLE_ADMIN"),
+                    new SimpleGrantedAuthority("ROLE_USER")
+            ));
+
+            // Act
+            String role = SecurityContextUtils.getCurrentUserRole();
+
+            // Assert
+            assertEquals("ADMIN", role); // 返回第一个匹配的ROLE_
+        }
+
+        @Test
+        @DisplayName("空权限列表时返回null")
+        void getCurrentUserRole_EmptyAuthorities() {
+            // Arrange
+            setAuthentication("1", Collections.emptyList());
+
+            // Act
+            String role = SecurityContextUtils.getCurrentUserRole();
+
+            // Assert
+            assertNull(role);
+        }
     }
 
-    @Test
-    void testGetCurrentUserIdWithInvalidUUID() {
-        // 设置无效的UUID格式
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        "invalid-uuid",
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
-                );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+    @Nested
+    @DisplayName("isAuthenticated 检查认证状态测试")
+    class IsAuthenticatedTests {
 
-        // 测试无效UUID时返回null
-        UUID userId = SecurityContextUtils.getCurrentUserId();
-        assertNull(userId);
+        @Test
+        @DisplayName("已认证用户返回true")
+        void isAuthenticated_AuthenticatedUser() {
+            // Arrange
+            setAuthentication("1", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+            // Act
+            boolean result = SecurityContextUtils.isAuthenticated();
+
+            // Assert
+            assertTrue(result);
+        }
+
+        @Test
+        @DisplayName("未认证用户返回false")
+        void isAuthenticated_NotAuthenticated() {
+            // 不设置任何认证信息
+
+            // Act
+            boolean result = SecurityContextUtils.isAuthenticated();
+
+            // Assert
+            assertFalse(result);
+        }
+
+        @Test
+        @DisplayName("匿名用户返回false")
+        void isAuthenticated_AnonymousUser() {
+            // Arrange
+            setAuthentication("anonymousUser", List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
+
+            // Act
+            boolean result = SecurityContextUtils.isAuthenticated();
+
+            // Assert
+            assertFalse(result);
+        }
+
+        @Test
+        @DisplayName("空Authentication返回false")
+        void isAuthenticated_NullAuthentication() {
+            // Arrange
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(null);
+            SecurityContextHolder.setContext(context);
+
+            // Act
+            boolean result = SecurityContextUtils.isAuthenticated();
+
+            // Assert
+            assertFalse(result);
+        }
     }
 
-    @Test
-    void testGetCurrentUserRoleWhenAuthenticated() {
-        // 设置认证信息
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        testUserId.toString(),
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + testRole))
-                );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+    @Nested
+    @DisplayName("hasRole 检查角色权限测试")
+    class HasRoleTests {
 
-        // 测试获取当前用户角色
-        String role = SecurityContextUtils.getCurrentUserRole();
+        @Test
+        @DisplayName("用户拥有指定角色返回true")
+        void hasRole_HasRole() {
+            // Arrange
+            setAuthentication("1", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
 
-        assertNotNull(role);
-        assertEquals(testRole, role);
+            // Act
+            boolean result = SecurityContextUtils.hasRole("ADMIN");
+
+            // Assert
+            assertTrue(result);
+        }
+
+        @Test
+        @DisplayName("用户没有指定角色返回false")
+        void hasRole_DoesNotHaveRole() {
+            // Arrange
+            setAuthentication("1", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+            // Act
+            boolean result = SecurityContextUtils.hasRole("ADMIN");
+
+            // Assert
+            assertFalse(result);
+        }
+
+        @Test
+        @DisplayName("未认证用户返回false")
+        void hasRole_NotAuthenticated() {
+            // 不设置任何认证信息
+
+            // Act
+            boolean result = SecurityContextUtils.hasRole("USER");
+
+            // Assert
+            assertFalse(result);
+        }
+
+        @Test
+        @DisplayName("多个角色中包含指定角色返回true")
+        void hasRole_MultipleRolesContainsTarget() {
+            // Arrange
+            setAuthentication("1", List.of(
+                    new SimpleGrantedAuthority("ROLE_USER"),
+                    new SimpleGrantedAuthority("ROLE_ADMIN")
+            ));
+
+            // Act
+            boolean hasUser = SecurityContextUtils.hasRole("USER");
+            boolean hasAdmin = SecurityContextUtils.hasRole("ADMIN");
+
+            // Assert
+            assertTrue(hasUser);
+            assertTrue(hasAdmin);
+        }
+
+        @Test
+        @DisplayName("空Authentication返回false")
+        void hasRole_NullAuthentication() {
+            // Arrange
+            SecurityContext context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(null);
+            SecurityContextHolder.setContext(context);
+
+            // Act
+            boolean result = SecurityContextUtils.hasRole("USER");
+
+            // Assert
+            assertFalse(result);
+        }
+
+        @Test
+        @DisplayName("大小写敏感测试")
+        void hasRole_CaseSensitive() {
+            // Arrange
+            setAuthentication("1", List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+            // Act
+            boolean hasUpperCase = SecurityContextUtils.hasRole("USER");
+            boolean hasLowerCase = SecurityContextUtils.hasRole("user");
+
+            // Assert
+            assertTrue(hasUpperCase);
+            assertFalse(hasLowerCase);
+        }
     }
 
-    @Test
-    void testGetCurrentUserRoleWhenNotAuthenticated() {
-        // 测试未认证时获取角色
-        String role = SecurityContextUtils.getCurrentUserRole();
-        assertNull(role);
-    }
+    @Nested
+    @DisplayName("综合测试")
+    class IntegrationTests {
 
-    @Test
-    void testGetCurrentUserRoleWithoutRolePrefix() {
-        // 测试角色名已移除ROLE_前缀
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        testUserId.toString(),
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))
-                );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        @Test
+        @DisplayName("完整认证流程 - 普通用户")
+        void fullFlow_RegularUser() {
+            // Arrange
+            setAuthentication("456", List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
-        String role = SecurityContextUtils.getCurrentUserRole();
+            // Assert
+            assertTrue(SecurityContextUtils.isAuthenticated());
+            assertEquals(456, SecurityContextUtils.getCurrentUserId());
+            assertEquals("USER", SecurityContextUtils.getCurrentUserRole());
+            assertTrue(SecurityContextUtils.hasRole("USER"));
+            assertFalse(SecurityContextUtils.hasRole("ADMIN"));
+        }
 
-        assertEquals("ADMIN", role);
-        assertFalse(role.startsWith("ROLE_"));
-    }
+        @Test
+        @DisplayName("完整认证流程 - 管理员")
+        void fullFlow_Admin() {
+            // Arrange
+            setAuthentication("1", List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
 
-    @Test
-    void testIsAuthenticatedWhenAuthenticated() {
-        // 设置认证信息
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        testUserId.toString(),
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
-                );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            // Assert
+            assertTrue(SecurityContextUtils.isAuthenticated());
+            assertEquals(1, SecurityContextUtils.getCurrentUserId());
+            assertEquals("ADMIN", SecurityContextUtils.getCurrentUserRole());
+            assertTrue(SecurityContextUtils.hasRole("ADMIN"));
+            assertFalse(SecurityContextUtils.hasRole("USER"));
+        }
 
-        // 测试是否已认证
-        assertTrue(SecurityContextUtils.isAuthenticated());
-    }
+        @Test
+        @DisplayName("完整认证流程 - 未认证")
+        void fullFlow_NotAuthenticated() {
+            // 不设置任何认证信息
 
-    @Test
-    void testIsAuthenticatedWhenNotAuthenticated() {
-        // 测试未认证
-        assertFalse(SecurityContextUtils.isAuthenticated());
-    }
-
-    @Test
-    void testIsAuthenticatedWhenAnonymous() {
-        // 设置匿名用户
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        "anonymousUser",
-                        null,
-                        Collections.emptyList()
-                );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        // 测试匿名用户未认证
-        assertFalse(SecurityContextUtils.isAuthenticated());
-    }
-
-    @Test
-    void testHasRoleWhenUserHasRole() {
-        // 设置认证信息
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        testUserId.toString(),
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))
-                );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        // 测试用户具有指定角色
-        assertTrue(SecurityContextUtils.hasRole("ADMIN"));
-    }
-
-    @Test
-    void testHasRoleWhenUserDoesNotHaveRole() {
-        // 设置认证信息
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                        testUserId.toString(),
-                        null,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
-                );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        // 测试用户不具有指定角色
-        assertFalse(SecurityContextUtils.hasRole("ADMIN"));
-    }
-
-    @Test
-    void testHasRoleWhenNotAuthenticated() {
-        // 测试未认证时不具有任何角色
-        assertFalse(SecurityContextUtils.hasRole("USER"));
-        assertFalse(SecurityContextUtils.hasRole("ADMIN"));
+            // Assert
+            assertFalse(SecurityContextUtils.isAuthenticated());
+            assertNull(SecurityContextUtils.getCurrentUserId());
+            assertNull(SecurityContextUtils.getCurrentUserRole());
+            assertFalse(SecurityContextUtils.hasRole("USER"));
+            assertFalse(SecurityContextUtils.hasRole("ADMIN"));
+        }
     }
 }
 

@@ -4,8 +4,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.util.UUID;
-
 /**
  * 安全上下文工具类
  * 用于从Spring Security上下文中获取当前认证用户信息
@@ -18,15 +16,16 @@ public class SecurityContextUtils {
 
     /**
      * 获取当前认证用户的ID
+     *
      * @return 用户ID，如果未认证则返回null
      */
-    public static UUID getCurrentUserId() {
+    public static Integer getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()
             && !"anonymousUser".equals(authentication.getPrincipal())) {
             String userIdStr = authentication.getPrincipal().toString();
             try {
-                return UUID.fromString(userIdStr);
+                return Integer.valueOf(userIdStr);
             } catch (IllegalArgumentException e) {
                 return null;
             }

@@ -51,7 +51,7 @@ public class SecurityConfig {
             // 配置授权规则
             .authorizeHttpRequests(auth -> auth
                 // 公开接口：注册和登录
-                .requestMatchers("/api/users/register", "/api/users/login").permitAll()
+                .requestMatchers("/api/user/register", "/api/user/login").permitAll()
                 // Swagger文档相关路径
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**").permitAll()
                 // 错误页面和健康检查

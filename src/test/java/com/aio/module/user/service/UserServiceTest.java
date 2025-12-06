@@ -1,33 +1,39 @@
 package com.aio.module.user.service;
 
+import com.aio.api.model.ModelApiResponse;
+import com.aio.api.model.UpdateUserInfoRequest;
+import com.aio.common.enums.ExceptionEnum;
+import com.aio.common.exception.GlobalException;
 import com.aio.module.user.entity.UserEntity;
 import com.aio.module.user.entity.UserPasswordEntity;
-import com.aio.module.user.enums.UserExceptionEnum;
-import com.aio.module.user.exception.UserException;
+import com.aio.module.user.enums.UserRoleEnum;
 import com.aio.module.user.repository.UserPasswordRepository;
 import com.aio.module.user.repository.UserRepository;
 import com.aio.module.user.utils.UserValidationUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-/**
- * 用户服务测试
- */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
+@DisplayName("UserService 单元测试")
 class UserServiceTest {
 
     @Mock
@@ -46,329 +52,618 @@ class UserServiceTest {
     private UserService userService;
 
     private UserEntity testUser;
-    private String rawPassword;
+    private UserPasswordEntity testUserPassword;
 
     @BeforeEach
     void setUp() {
         testUser = new UserEntity();
-        testUser.setUserId(UUID.randomUUID());
-        testUser.setUsername("testuser");
-        testUser.setName("Test User");
+        testUser.setUserId(1);
+        testUser.setUserName("testuser");
+        testUser.setDisplayName("Test User");
         testUser.setEmail("test@example.com");
         testUser.setPhone("13800138000");
         testUser.setGender("M");
         testUser.setBirthday(LocalDate.of(1990, 1, 1));
-        testUser.setOccupation("Engineer");
-        testUser.setSignature("Test");
-        testUser.setRole("USER");
+        testUser.setRole(UserRoleEnum.USER.getValue());
         testUser.setStatus(1);
         testUser.setRegisterTime(LocalDateTime.now());
 
-        rawPassword = "password123";
+        testUserPassword = new UserPasswordEntity();
+        testUserPassword.setUserId(1);
+        testUserPassword.setPassword("encodedPassword");
+        testUserPassword.setCreatedTime(LocalDateTime.now());
     }
 
-    // ==================== 注册测试 ====================
-    @Test
-    void testRegisterSuccess() {
-        // 测试注册成功
-        String encodedPassword = "$2a$10$encodedPassword";
+    @Nested
+    @DisplayName("register 注册测试")
+    class RegisterTests {
 
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUser);
-        when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
-        when(userPasswordRepository.save(any(UserPasswordEntity.class)))
-                .thenReturn(new UserPasswordEntity(testUser.getUserId(), encodedPassword));
+        @Test
+        @DisplayName("注册成功 - 正常用户信息")
+        void register_Success() {
+            // Arrange
+            String rawPassword = "password123";
+            String encodedPassword = "encodedPassword123";
 
-        UserEntity result = userService.register(testUser, rawPassword);
+            doNothing().when(userValidationUtils).validateUserName(anyString());
+            doNothing().when(userValidationUtils).validatePassword(anyString());
+            doNothing().when(userValidationUtils).validateEmail(anyString());
+            doNothing().when(userValidationUtils).validatePhone(anyString());
+            doNothing().when(userValidationUtils).validateBirthday(any());
+            doNothing().when(userValidationUtils).validateGender(anyString());
+            doNothing().when(userValidationUtils).validateRole(anyString());
+            doNothing().when(userValidationUtils).validateUserAccountUniqueness(any());
 
-        assertNotNull(result);
-        assertEquals("testuser", result.getUsername());
+            when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> {
+                UserEntity user = invocation.getArgument(0);
+                user.setUserId(1);
+                return user;
+            });
+            when(passwordEncoder.encode(rawPassword)).thenReturn(encodedPassword);
+            when(userPasswordRepository.save(any(UserPasswordEntity.class))).thenReturn(testUserPassword);
 
-        verify(userValidationUtils).validateUserName(testUser.getUsername());
-        verify(userValidationUtils).validatePassword(rawPassword);
-        verify(userValidationUtils).validateEmail(testUser.getEmail());
-        verify(userValidationUtils).validatePhone(testUser.getPhone());
-        verify(userValidationUtils).validateBirthday(testUser.getBirthday());
-        verify(userValidationUtils).validateGender(testUser.getGender());
-        verify(userValidationUtils).validateRole(testUser.getRole());
-        verify(userValidationUtils).validateUserAccountUniqueness(testUser);
-        verify(userRepository).save(testUser);
-        verify(passwordEncoder).encode(rawPassword);
-        verify(userPasswordRepository).save(any(UserPasswordEntity.class));
+            // Act
+            UserEntity result = userService.register(testUser, rawPassword);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(1, result.getUserId());
+            verify(userRepository).save(testUser);
+            verify(userPasswordRepository).save(any(UserPasswordEntity.class));
+            verify(passwordEncoder).encode(rawPassword);
+        }
+
+        @Test
+        @DisplayName("注册失败 - 用户名格式错误")
+        void register_InvalidUsername() {
+            // Arrange
+            String rawPassword = "password123";
+            doThrow(new GlobalException(ExceptionEnum.USERNAME_VALIDATION_ERROR))
+                    .when(userValidationUtils).validateUserName(anyString());
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.register(testUser, rawPassword));
+            assertEquals(ExceptionEnum.USERNAME_VALIDATION_ERROR.getMessage(), exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("注册失败 - 密码格式错误")
+        void register_InvalidPassword() {
+            // Arrange
+            String rawPassword = "123";
+            doNothing().when(userValidationUtils).validateUserName(anyString());
+            doThrow(new GlobalException(ExceptionEnum.PASSWORD_VALIDATION_ERROR))
+                    .when(userValidationUtils).validatePassword(anyString());
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.register(testUser, rawPassword));
+            assertEquals(ExceptionEnum.PASSWORD_VALIDATION_ERROR.getMessage(), exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("注册失败 - 用户名已存在")
+        void register_UsernameAlreadyExists() {
+            // Arrange
+            String rawPassword = "password123";
+            doNothing().when(userValidationUtils).validateUserName(anyString());
+            doNothing().when(userValidationUtils).validatePassword(anyString());
+            doNothing().when(userValidationUtils).validateEmail(anyString());
+            doNothing().when(userValidationUtils).validatePhone(anyString());
+            doNothing().when(userValidationUtils).validateBirthday(any());
+            doNothing().when(userValidationUtils).validateGender(anyString());
+            doNothing().when(userValidationUtils).validateRole(anyString());
+            doThrow(new GlobalException(ExceptionEnum.USERNAME_ALREADY_EXIST))
+                    .when(userValidationUtils).validateUserAccountUniqueness(any());
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.register(testUser, rawPassword));
+            assertEquals(ExceptionEnum.USERNAME_ALREADY_EXIST.getMessage(), exception.getMessage());
+        }
     }
 
-    @Test
-    void testRegisterValidationFails() {
-        // 测试注册时验证失败
-        doThrow(new UserException(UserExceptionEnum.USERNAME_VALIDATION_ERROR))
-                .when(userValidationUtils).validateUserName(anyString());
+    @Nested
+    @DisplayName("login 登录测试")
+    class LoginTests {
 
-        assertThrows(UserException.class, () -> {
-            userService.register(testUser, rawPassword);
-        });
+        @Test
+        @DisplayName("登录成功 - 用户名登录")
+        void login_SuccessWithUsername() {
+            // Arrange
+            String account = "testuser";
+            String rawPassword = "password123";
 
-        verify(userRepository, never()).save(any());
-        verify(userPasswordRepository, never()).save(any());
+            when(userRepository.findByUserNameAndStatus(account, 1)).thenReturn(Optional.of(testUser));
+            when(userPasswordRepository.findPasswordByUserId(testUser.getUserId())).thenReturn("encodedPassword");
+            when(passwordEncoder.matches(rawPassword, "encodedPassword")).thenReturn(true);
+            when(userRepository.save(any(UserEntity.class))).thenReturn(testUser);
+
+            // Act
+            UserEntity result = userService.login(account, rawPassword);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(testUser.getUserId(), result.getUserId());
+            assertNotNull(result.getLastLoginTime());
+            verify(userRepository).save(testUser);
+        }
+
+        @Test
+        @DisplayName("登录成功 - 邮箱登录")
+        void login_SuccessWithEmail() {
+            // Arrange
+            String account = "test@example.com";
+            String rawPassword = "password123";
+
+            when(userRepository.findByUserNameAndStatus(account, 1)).thenReturn(Optional.empty());
+            when(userRepository.findByEmailAndStatus(account, 1)).thenReturn(Optional.of(testUser));
+            when(userPasswordRepository.findPasswordByUserId(testUser.getUserId())).thenReturn("encodedPassword");
+            when(passwordEncoder.matches(rawPassword, "encodedPassword")).thenReturn(true);
+            when(userRepository.save(any(UserEntity.class))).thenReturn(testUser);
+
+            // Act
+            UserEntity result = userService.login(account, rawPassword);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(testUser.getEmail(), result.getEmail());
+        }
+
+        @Test
+        @DisplayName("登录成功 - 手机号登录")
+        void login_SuccessWithPhone() {
+            // Arrange
+            String account = "13800138000";
+            String rawPassword = "password123";
+
+            when(userRepository.findByUserNameAndStatus(account, 1)).thenReturn(Optional.empty());
+            when(userRepository.findByEmailAndStatus(account, 1)).thenReturn(Optional.empty());
+            when(userRepository.findByPhoneAndStatus(account, 1)).thenReturn(Optional.of(testUser));
+            when(userPasswordRepository.findPasswordByUserId(testUser.getUserId())).thenReturn("encodedPassword");
+            when(passwordEncoder.matches(rawPassword, "encodedPassword")).thenReturn(true);
+            when(userRepository.save(any(UserEntity.class))).thenReturn(testUser);
+
+            // Act
+            UserEntity result = userService.login(account, rawPassword);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(testUser.getPhone(), result.getPhone());
+        }
+
+        @Test
+        @DisplayName("登录失败 - 用户不存在")
+        void login_UserNotExist() {
+            // Arrange
+            String account = "nonexistent";
+            String rawPassword = "password123";
+
+            when(userRepository.findByUserNameAndStatus(account, 1)).thenReturn(Optional.empty());
+            when(userRepository.findByEmailAndStatus(account, 1)).thenReturn(Optional.empty());
+            when(userRepository.findByPhoneAndStatus(account, 1)).thenThrow(new GlobalException("用户不存在或已禁用"));
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.login(account, rawPassword));
+            assertTrue(exception.getMessage().contains("用户不存在"));
+        }
+
+        @Test
+        @DisplayName("登录失败 - 密码错误")
+        void login_PasswordError() {
+            // Arrange
+            String account = "testuser";
+            String rawPassword = "wrongPassword";
+
+            when(userRepository.findByUserNameAndStatus(account, 1)).thenReturn(Optional.of(testUser));
+            when(userPasswordRepository.findPasswordByUserId(testUser.getUserId())).thenReturn("encodedPassword");
+            when(passwordEncoder.matches(rawPassword, "encodedPassword")).thenReturn(false);
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.login(account, rawPassword));
+            assertEquals(ExceptionEnum.USER_PASSWORD_ERROR.getMessage(), exception.getMessage());
+        }
     }
 
-    // ==================== 登录测试 ====================
-    @Test
-    void testLoginByUsernameSuccess() {
-        // 测试通过用户名登录成功
-        String encodedPassword = "$2a$10$encodedPassword";
+    @Nested
+    @DisplayName("updatePassword 修改密码测试")
+    class UpdatePasswordTests {
 
-        when(userRepository.findByUsernameAndStatus("testuser", 1))
-                .thenReturn(Optional.of(testUser));
-        when(userPasswordRepository.findPasswordByUserId(testUser.getUserId()))
-                .thenReturn(encodedPassword);
-        when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(true);
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUser);
+        @Test
+        @DisplayName("修改密码成功")
+        void updatePassword_Success() {
+            // Arrange
+            Integer userId = 1;
+            String oldPassword = "oldPassword";
+            String newPassword = "newPassword";
+            String encodedNewPassword = "encodedNewPassword";
 
-        UserEntity result = userService.login("testuser", rawPassword);
+            when(userPasswordRepository.findByUserId(userId)).thenReturn(Optional.of(testUserPassword));
+            when(passwordEncoder.matches(oldPassword, testUserPassword.getPassword())).thenReturn(true);
+            when(passwordEncoder.encode(newPassword)).thenReturn(encodedNewPassword);
+            when(userPasswordRepository.save(any(UserPasswordEntity.class))).thenReturn(testUserPassword);
 
-        assertNotNull(result);
-        assertEquals("testuser", result.getUsername());
-        assertNotNull(result.getLastLoginTime());
-
-        verify(userRepository).save(any(UserEntity.class));
-    }
-
-    @Test
-    void testLoginByEmailSuccess() {
-        // 测试通过邮箱登录成功
-        String encodedPassword = "$2a$10$encodedPassword";
-
-        when(userRepository.findByUsernameAndStatus("test@example.com", 1))
-                .thenReturn(Optional.empty());
-        when(userRepository.findByEmailAndStatus("test@example.com", 1))
-                .thenReturn(Optional.of(testUser));
-        when(userPasswordRepository.findPasswordByUserId(testUser.getUserId()))
-                .thenReturn(encodedPassword);
-        when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(true);
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUser);
-
-        UserEntity result = userService.login("test@example.com", rawPassword);
-
-        assertNotNull(result);
-        assertEquals("testuser", result.getUsername());
-    }
-
-    @Test
-    void testLoginByPhoneSuccess() {
-        // 测试通过手机号登录成功
-        String encodedPassword = "$2a$10$encodedPassword";
-
-        when(userRepository.findByUsernameAndStatus("13800138000", 1))
-                .thenReturn(Optional.empty());
-        when(userRepository.findByEmailAndStatus("13800138000", 1))
-                .thenReturn(Optional.empty());
-        when(userRepository.findByPhoneAndStatus("13800138000", 1))
-                .thenReturn(Optional.of(testUser));
-        when(userPasswordRepository.findPasswordByUserId(testUser.getUserId()))
-                .thenReturn(encodedPassword);
-        when(passwordEncoder.matches(rawPassword, encodedPassword)).thenReturn(true);
-        when(userRepository.save(any(UserEntity.class))).thenReturn(testUser);
-
-        UserEntity result = userService.login("13800138000", rawPassword);
-
-        assertNotNull(result);
-        assertEquals("testuser", result.getUsername());
-    }
-
-    @Test
-    void testLoginUserNotExist() {
-        // 测试登录时用户不存在
-        when(userRepository.findByUsernameAndStatus(anyString(), anyInt()))
-                .thenReturn(Optional.empty());
-        when(userRepository.findByEmailAndStatus(anyString(), anyInt()))
-                .thenReturn(Optional.empty());
-        when(userRepository.findByPhoneAndStatus(anyString(), anyInt()))
-                .thenThrow(new UserException(UserExceptionEnum.USER_NOT_EXIST));
-
-        assertThrows(UserException.class, () -> {
-            userService.login("nonexistent", rawPassword);
-        });
-    }
-
-    @Test
-    void testLoginWrongPassword() {
-        // 测试登录时密码错误
-        String encodedPassword = "$2a$10$encodedPassword";
-
-        when(userRepository.findByUsernameAndStatus("testuser", 1))
-                .thenReturn(Optional.of(testUser));
-        when(userPasswordRepository.findPasswordByUserId(testUser.getUserId()))
-                .thenReturn(encodedPassword);
-        when(passwordEncoder.matches("wrongpassword", encodedPassword)).thenReturn(false);
-
-        assertThrows(UserException.class, () -> {
-            userService.login("testuser", "wrongpassword");
-        });
-
-        verify(userRepository, never()).save(any());
-    }
-
-    // ==================== 修改密码测试 ====================
-    @Test
-    void testUpdatePasswordSuccess() {
-        // 测试修改密码成功
-        UUID userId = testUser.getUserId();
-        String oldPassword = "oldPassword";
-        String newPassword = "newPassword";
-        String encodedOldPassword = "$2a$10$encodedOldPassword";
-        String encodedNewPassword = "$2a$10$encodedNewPassword";
-
-        UserPasswordEntity passwordEntity = new UserPasswordEntity();
-        passwordEntity.setUserId(userId);
-        passwordEntity.setPassword(encodedOldPassword);
-
-        when(userPasswordRepository.findByUserId(userId))
-                .thenReturn(Optional.of(passwordEntity));
-        when(passwordEncoder.matches(oldPassword, encodedOldPassword)).thenReturn(true);
-        when(passwordEncoder.encode(newPassword)).thenReturn(encodedNewPassword);
-        when(userPasswordRepository.save(any(UserPasswordEntity.class)))
-                .thenReturn(passwordEntity);
-
-        assertDoesNotThrow(() -> {
+            // Act
             userService.updatePassword(userId, oldPassword, newPassword);
-        });
 
-        verify(userPasswordRepository).save(any(UserPasswordEntity.class));
+            // Assert
+            ArgumentCaptor<UserPasswordEntity> captor = ArgumentCaptor.forClass(UserPasswordEntity.class);
+            verify(userPasswordRepository).save(captor.capture());
+            assertEquals(encodedNewPassword, captor.getValue().getPassword());
+        }
+
+        @Test
+        @DisplayName("修改密码失败 - 用户密码不存在")
+        void updatePassword_PasswordNotExist() {
+            // Arrange
+            Integer userId = 999;
+            String oldPassword = "oldPassword";
+            String newPassword = "newPassword";
+
+            when(userPasswordRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.updatePassword(userId, oldPassword, newPassword));
+            assertEquals(ExceptionEnum.USER_PASSWORD_NOT_EXIST.getMessage(), exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("修改密码失败 - 旧密码错误")
+        void updatePassword_OldPasswordError() {
+            // Arrange
+            Integer userId = 1;
+            String oldPassword = "wrongOldPassword";
+            String newPassword = "newPassword";
+
+            when(userPasswordRepository.findByUserId(userId)).thenReturn(Optional.of(testUserPassword));
+            when(passwordEncoder.matches(oldPassword, testUserPassword.getPassword())).thenReturn(false);
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.updatePassword(userId, oldPassword, newPassword));
+            assertEquals(ExceptionEnum.USER_OLD_PASSWORD_ERROR.getMessage(), exception.getMessage());
+        }
     }
 
-    @Test
-    void testUpdatePasswordNotExist() {
-        // 测试修改不存在的密码
-        UUID userId = UUID.randomUUID();
+    @Nested
+    @DisplayName("deleteUser 删除用户测试")
+    class DeleteUserTests {
 
-        when(userPasswordRepository.findByUserId(userId))
-                .thenReturn(Optional.empty());
+        @Test
+        @DisplayName("管理员删除用户成功")
+        void deleteUser_AdminSuccess() {
+            // Arrange
+            Integer targetUserId = 2;
+            Integer currentUserId = 1;
+            String currentRole = UserRoleEnum.ADMIN.getValue();
 
-        assertThrows(UserException.class, () -> {
-            userService.updatePassword(userId, "oldPassword", "newPassword");
-        });
-    }
+            UserEntity targetUser = new UserEntity();
+            targetUser.setUserId(targetUserId);
+            targetUser.setUserName("targetUser");
 
-    @Test
-    void testUpdatePasswordOldPasswordWrong() {
-        // 测试修改密码时旧密码错误
-        UUID userId = testUser.getUserId();
-        String encodedPassword = "$2a$10$encodedPassword";
+            when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetUser));
+            doNothing().when(userRepository).delete(targetUser);
 
-        UserPasswordEntity passwordEntity = new UserPasswordEntity();
-        passwordEntity.setUserId(userId);
-        passwordEntity.setPassword(encodedPassword);
-
-        when(userPasswordRepository.findByUserId(userId))
-                .thenReturn(Optional.of(passwordEntity));
-        when(passwordEncoder.matches("wrongOldPassword", encodedPassword)).thenReturn(false);
-
-        assertThrows(UserException.class, () -> {
-            userService.updatePassword(userId, "wrongOldPassword", "newPassword");
-        });
-
-        verify(userPasswordRepository, never()).save(any());
-    }
-
-    // ==================== 删除用户测试 ====================
-    @Test
-    void testDeleteUserAsAdmin() {
-        // 测试管理员删除用户
-        UUID targetUserId = UUID.randomUUID();
-        UUID currentUserId = testUser.getUserId();
-        String currentRole = "ADMIN";
-
-        assertDoesNotThrow(() -> {
+            // Act
             userService.deleteUser(targetUserId, currentUserId, currentRole);
-        });
 
-        verify(userPasswordRepository).deleteById(targetUserId);
-        verify(userRepository).deleteById(targetUserId);
-    }
+            // Assert
+            verify(userRepository).delete(targetUser);
+        }
 
-    @Test
-    void testDeleteSelfAsUser() {
-        // 测试普通用户删除自己
-        UUID userId = testUser.getUserId();
-        String currentRole = "USER";
+        @Test
+        @DisplayName("普通用户删除自己成功")
+        void deleteUser_SelfDeleteSuccess() {
+            // Arrange
+            Integer targetUserId = 1;
+            Integer currentUserId = 1;
+            String currentRole = UserRoleEnum.USER.getValue();
 
-        assertDoesNotThrow(() -> {
-            userService.deleteUser(userId, userId, currentRole);
-        });
+            when(userRepository.findById(targetUserId)).thenReturn(Optional.of(testUser));
+            doNothing().when(userRepository).delete(testUser);
 
-        verify(userPasswordRepository).deleteById(userId);
-        verify(userRepository).deleteById(userId);
-    }
-
-    @Test
-    void testDeleteOtherAsUser() {
-        // 测试普通用户尝试删除其他用户
-        UUID targetUserId = UUID.randomUUID();
-        UUID currentUserId = testUser.getUserId();
-        String currentRole = "USER";
-
-        assertThrows(UserException.class, () -> {
+            // Act
             userService.deleteUser(targetUserId, currentUserId, currentRole);
-        });
 
-        verify(userPasswordRepository, never()).deleteById(any());
-        verify(userRepository, never()).deleteById(any());
+            // Assert
+            verify(userRepository).delete(testUser);
+        }
+
+        @Test
+        @DisplayName("普通用户删除他人失败 - 权限不足")
+        void deleteUser_NonAdminDeleteOthersFailed() {
+            // Arrange
+            Integer targetUserId = 2;
+            Integer currentUserId = 1;
+            String currentRole = UserRoleEnum.USER.getValue();
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.deleteUser(targetUserId, currentUserId, currentRole));
+            assertEquals(ExceptionEnum.USER_NOT_ADMIN.getMessage(), exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("删除用户失败 - 用户不存在")
+        void deleteUser_UserNotExist() {
+            // Arrange
+            Integer targetUserId = 999;
+            Integer currentUserId = 1;
+            String currentRole = UserRoleEnum.ADMIN.getValue();
+
+            when(userRepository.findById(targetUserId)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.deleteUser(targetUserId, currentUserId, currentRole));
+            assertEquals(ExceptionEnum.USER_NOT_EXIST.getMessage(), exception.getMessage());
+        }
     }
 
-    // ==================== 获取用户信息测试 ====================
-    @Test
-    void testGetUserInfoSuccess() {
-        // 测试获取用户信息成功
-        UUID userId = testUser.getUserId();
+    @Nested
+    @DisplayName("updateUserInfo 修改用户信息测试")
+    class UpdateUserInfoTests {
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        @Test
+        @DisplayName("管理员修改其他用户信息成功")
+        void updateUserInfo_AdminUpdateOthersSuccess() {
+            // Arrange
+            Integer targetUserId = 2;
+            Integer currentUserId = 1;
+            String currentRole = UserRoleEnum.ADMIN.getValue();
 
-        var response = userService.getUserInfo(userId);
+            UserEntity targetUser = new UserEntity();
+            targetUser.setUserId(targetUserId);
+            targetUser.setUserName("originalUser");
+            targetUser.setDisplayName("Original Name");
+            targetUser.setEmail("original@example.com");
+            targetUser.setPhone("13900139000");
+            targetUser.setRole(UserRoleEnum.USER.getValue());
+            targetUser.setStatus(1);
 
-        assertNotNull(response);
-        assertEquals(200, response.getCode());
-        assertEquals("查询成功", response.getMessage());
-        assertNotNull(response.getData());
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setUserName("newUsername");
+            request.setDisplayName("New Name");
+            request.setEmail("new@example.com");
+
+            when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetUser));
+            doNothing().when(userValidationUtils).validateUserName(anyString());
+            doNothing().when(userValidationUtils).validateEmail(anyString());
+            doNothing().when(userValidationUtils).validatePhone(anyString());
+            doNothing().when(userValidationUtils).validateBirthday(any());
+            doNothing().when(userValidationUtils).validateGender(anyString());
+            doNothing().when(userValidationUtils).validateRole(anyString());
+            doNothing().when(userValidationUtils).validateUserAccountUniquenessForUpdate(any());
+            when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            // Act
+            UserEntity result = userService.updateUserInfo(targetUserId, currentUserId, currentRole, request);
+
+            // Assert
+            assertNotNull(result);
+            verify(userRepository).save(any(UserEntity.class));
+        }
+
+        @Test
+        @DisplayName("普通用户修改自己信息成功")
+        void updateUserInfo_SelfUpdateSuccess() {
+            // Arrange
+            Integer targetUserId = 1;
+            Integer currentUserId = 1;
+            String currentRole = UserRoleEnum.USER.getValue();
+
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setDisplayName("Updated Name");
+            request.setOccupation("Engineer");
+            request.setSignature("Hello World");
+
+            when(userRepository.findById(targetUserId)).thenReturn(Optional.of(testUser));
+            doNothing().when(userValidationUtils).validateUserName(anyString());
+            doNothing().when(userValidationUtils).validateEmail(anyString());
+            doNothing().when(userValidationUtils).validatePhone(anyString());
+            doNothing().when(userValidationUtils).validateBirthday(any());
+            doNothing().when(userValidationUtils).validateGender(anyString());
+            doNothing().when(userValidationUtils).validateRole(anyString());
+            doNothing().when(userValidationUtils).validateUserAccountUniquenessForUpdate(any());
+            when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            // Act
+            UserEntity result = userService.updateUserInfo(targetUserId, currentUserId, currentRole, request);
+
+            // Assert
+            assertNotNull(result);
+            verify(userRepository).save(any(UserEntity.class));
+        }
+
+        @Test
+        @DisplayName("普通用户修改他人信息失败 - 权限不足")
+        void updateUserInfo_NonAdminUpdateOthersFailed() {
+            // Arrange
+            Integer targetUserId = 2;
+            Integer currentUserId = 1;
+            String currentRole = UserRoleEnum.USER.getValue();
+
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setDisplayName("New Name");
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.updateUserInfo(targetUserId, currentUserId, currentRole, request));
+            assertEquals(ExceptionEnum.USER_NOT_ADMIN.getMessage(), exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("修改用户信息失败 - 用户不存在")
+        void updateUserInfo_UserNotExist() {
+            // Arrange
+            Integer targetUserId = 999;
+            Integer currentUserId = 1;
+            String currentRole = UserRoleEnum.ADMIN.getValue();
+
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setDisplayName("New Name");
+
+            when(userRepository.findById(targetUserId)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.updateUserInfo(targetUserId, currentUserId, currentRole, request));
+            assertEquals(ExceptionEnum.USER_NOT_EXIST.getMessage(), exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("修改用户信息 - 仅更新部分字段")
+        void updateUserInfo_PartialUpdate() {
+            // Arrange
+            Integer targetUserId = 1;
+            Integer currentUserId = 1;
+            String currentRole = UserRoleEnum.USER.getValue();
+
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setPhone("13911139111");
+            // 其他字段不设置
+
+            when(userRepository.findById(targetUserId)).thenReturn(Optional.of(testUser));
+            doNothing().when(userValidationUtils).validateUserName(anyString());
+            doNothing().when(userValidationUtils).validateEmail(anyString());
+            doNothing().when(userValidationUtils).validatePhone(anyString());
+            doNothing().when(userValidationUtils).validateBirthday(any());
+            doNothing().when(userValidationUtils).validateGender(anyString());
+            doNothing().when(userValidationUtils).validateRole(anyString());
+            doNothing().when(userValidationUtils).validateUserAccountUniquenessForUpdate(any());
+            when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+            // Act
+            UserEntity result = userService.updateUserInfo(targetUserId, currentUserId, currentRole, request);
+
+            // Assert
+            assertNotNull(result);
+            verify(userRepository).save(any(UserEntity.class));
+        }
+
+        @Test
+        @DisplayName("修改用户信息失败 - 用户名已存在")
+        void updateUserInfo_UsernameAlreadyExists() {
+            // Arrange
+            Integer targetUserId = 1;
+            Integer currentUserId = 1;
+            String currentRole = UserRoleEnum.USER.getValue();
+
+            UpdateUserInfoRequest request = new UpdateUserInfoRequest();
+            request.setUserName("existingUser");
+
+            when(userRepository.findById(targetUserId)).thenReturn(Optional.of(testUser));
+            doNothing().when(userValidationUtils).validateUserName(anyString());
+            doNothing().when(userValidationUtils).validateEmail(anyString());
+            doNothing().when(userValidationUtils).validatePhone(anyString());
+            doNothing().when(userValidationUtils).validateBirthday(any());
+            doNothing().when(userValidationUtils).validateGender(anyString());
+            doNothing().when(userValidationUtils).validateRole(anyString());
+            doThrow(new GlobalException(ExceptionEnum.USERNAME_ALREADY_EXIST))
+                    .when(userValidationUtils).validateUserAccountUniquenessForUpdate(any());
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.updateUserInfo(targetUserId, currentUserId, currentRole, request));
+            assertEquals(ExceptionEnum.USERNAME_ALREADY_EXIST.getMessage(), exception.getMessage());
+        }
     }
 
-    @Test
-    void testGetUserInfoNotFound() {
-        // 测试获取不存在的用户信息
-        UUID userId = UUID.randomUUID();
+    @Nested
+    @DisplayName("getUserInfo 获取用户信息测试")
+    class GetUserInfoTests {
 
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        @Test
+        @DisplayName("获取用户信息成功")
+        void getUserInfo_Success() {
+            // Arrange
+            Integer userId = 1;
+            when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
 
-        assertThrows(UserException.class, () -> {
-            userService.getUserInfo(userId);
-        });
+            // Act
+            ModelApiResponse result = userService.getUserInfo(userId);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(200, result.getCode());
+            assertEquals("查询成功", result.getMsg());
+            assertTrue(result.getData().isPresent());
+        }
+
+        @Test
+        @DisplayName("获取用户信息失败 - 用户不存在")
+        void getUserInfo_UserNotExist() {
+            // Arrange
+            Integer userId = 999;
+            when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            GlobalException exception = assertThrows(GlobalException.class,
+                    () -> userService.getUserInfo(userId));
+            assertEquals(ExceptionEnum.USER_NOT_EXIST.getMessage(), exception.getMessage());
+        }
     }
 
-    // ==================== 验证用户测试 ====================
-    @Test
-    void testValidateUserSuccess() {
-        // 测试验证用户成功
-        assertDoesNotThrow(() -> {
+    @Nested
+    @DisplayName("validateUser 校验方法测试")
+    class ValidateUserTests {
+
+        @Test
+        @DisplayName("validateUser 调用所有校验方法")
+        void validateUser_CallsAllValidations() {
+            // Arrange
+            String rawPassword = "password123";
+            doNothing().when(userValidationUtils).validateUserName(anyString());
+            doNothing().when(userValidationUtils).validatePassword(anyString());
+            doNothing().when(userValidationUtils).validateEmail(anyString());
+            doNothing().when(userValidationUtils).validatePhone(anyString());
+            doNothing().when(userValidationUtils).validateBirthday(any());
+            doNothing().when(userValidationUtils).validateGender(anyString());
+            doNothing().when(userValidationUtils).validateRole(anyString());
+            doNothing().when(userValidationUtils).validateUserAccountUniqueness(any());
+
+            // Act
             userService.validateUser(testUser, rawPassword);
-        });
 
-        verify(userValidationUtils).validateUserName(testUser.getUsername());
-        verify(userValidationUtils).validatePassword(rawPassword);
-        verify(userValidationUtils).validateEmail(testUser.getEmail());
-        verify(userValidationUtils).validatePhone(testUser.getPhone());
-        verify(userValidationUtils).validateBirthday(testUser.getBirthday());
-        verify(userValidationUtils).validateGender(testUser.getGender());
-        verify(userValidationUtils).validateRole(testUser.getRole());
-        verify(userValidationUtils).validateUserAccountUniqueness(testUser);
-    }
+            // Assert
+            verify(userValidationUtils).validateUserName(testUser.getUserName());
+            verify(userValidationUtils).validatePassword(rawPassword);
+            verify(userValidationUtils).validateEmail(testUser.getEmail());
+            verify(userValidationUtils).validatePhone(testUser.getPhone());
+            verify(userValidationUtils).validateBirthday(testUser.getBirthday());
+            verify(userValidationUtils).validateGender(testUser.getGender());
+            verify(userValidationUtils).validateRole(testUser.getRole());
+            verify(userValidationUtils).validateUserAccountUniqueness(testUser);
+        }
 
-    @Test
-    void testValidateUserFails() {
-        // 测试验证用户失败
-        doThrow(new UserException(UserExceptionEnum.EMAIL_VALIDATION_ERROR))
-                .when(userValidationUtils).validateEmail(anyString());
+        @Test
+        @DisplayName("validateUserUpdate 调用所有更新校验方法")
+        void validateUserUpdate_CallsAllValidations() {
+            // Arrange
+            doNothing().when(userValidationUtils).validateUserName(anyString());
+            doNothing().when(userValidationUtils).validateEmail(anyString());
+            doNothing().when(userValidationUtils).validatePhone(anyString());
+            doNothing().when(userValidationUtils).validateBirthday(any());
+            doNothing().when(userValidationUtils).validateGender(anyString());
+            doNothing().when(userValidationUtils).validateRole(anyString());
+            doNothing().when(userValidationUtils).validateUserAccountUniquenessForUpdate(any());
 
-        assertThrows(UserException.class, () -> {
-            userService.validateUser(testUser, rawPassword);
-        });
+            // Act
+            userService.validateUserUpdate(testUser);
+
+            // Assert
+            verify(userValidationUtils).validateUserName(testUser.getUserName());
+            verify(userValidationUtils).validateEmail(testUser.getEmail());
+            verify(userValidationUtils).validatePhone(testUser.getPhone());
+            verify(userValidationUtils).validateBirthday(testUser.getBirthday());
+            verify(userValidationUtils).validateGender(testUser.getGender());
+            verify(userValidationUtils).validateRole(testUser.getRole());
+            verify(userValidationUtils).validateUserAccountUniquenessForUpdate(testUser);
+        }
     }
 }
 

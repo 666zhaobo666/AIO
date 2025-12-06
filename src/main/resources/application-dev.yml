@@ -5,7 +5,7 @@ server:
 # 需要设置环境变量: DB_USERNAME, DB_PASSWORD
 spring:
   datasource:
-    url: jdbc:postgresql://db.cccg.top:5433/aios  # 数据库地址（aio_dev为开发库名）
+    url: jdbc:postgresql://${DB_HOST}/${DB_NAME}  # 数据库地址（aio_dev为开发库名）
     username: ${DB_USERNAME}  # 环境变量 DB_USERNAME
     password: ${DB_PASSWORD}  # 环境变量 DB_PASSWORD
     driver-class-name: org.postgresql.Driver  # PostgreSQL驱动
@@ -19,7 +19,7 @@ spring:
 aio:
   jwt:
     secret: ${JWT_SECRET}  # 环境变量 JWT_SECRET（生产环境务必更换）
-    expire-days: ${JWT_EXPIRE_DAYS}  # 环境变量 JWT_EXPIRE_DAYS（令牌过期天数）
+    expire-days: 7  # 环境变量 JWT_EXPIRE_DAYS（令牌过期天数）
 
 # 日志配置（开发环境日志级别更详细）
 logging:
