@@ -30,6 +30,12 @@ public enum ExceptionEnum {
     USER_NOT_ADMIN(false, 403, "用户权限不足，非管理员"),
     AUTHORIZATION_FAILED(false, 401, "Authorization Failed!"),
 
+
+    /* FTS */
+    TUNNEL_NOT_EXIST(false, 400, "Tunnel not exist"),
+
+
+
     ;
 
     private final Boolean status;
