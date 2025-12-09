@@ -1,34 +1,90 @@
 openapi: 3.0.3
 info:
-    title: User Management API
+    title: AIO API
     version: 1.0.0
-    x-java-interface-name: UserApi
+    x-java-interface-name: OpenApi
 tags:
     - name: User
       description: 用户管理 (UserController)
-    - name: FTS-Admin-Node
-      description: 【管理端】节点管理 (NodeController)
-    - name: FTS-Admin-Tunnel
-      description: 【管理端】隧道/线路管理 (TunnelController)
-    - name: FTS-Admin-SpeedLimit
-      description: 【管理端】限速规则管理 (SpeedLimitController)
-    - name: FTS-User-Forward
-      description: 【用户端】端口转发规则 (ForwardController)
-    - name: FTS-User-Flow
-      description: 【用户端】流量与统计 (FlowController)
+    - name: Captcha
+      description: 验证码接口 (CaptchaController)
+    - name: FTS
+      description: FTS模块接口 (FTSController)
 
 ## endpoints ##
 paths:
     # ==========================================
-    # 用户管理
+    # Captcha
     # ==========================================
-    # 注册
+    /api/captcha/check:
+        post:
+            tags: [ Captcha ]
+            summary: 检查验证码是否启用
+            description: |
+                根据配置项 `captcha_enabled` 判断是否启用验证码。
+                返回 data 为 0 表示未启用，1 表示启用。
+            responses:
+                '200':
+                    description: 成功
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    -   $ref: '#/components/schemas/ModelApiResponse'
+                                    -   type: object
+                                        properties:
+                                            data:
+                                                type: integer
+                                                format: int32
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/captcha/generate:
+        post:
+            tags: [ Captcha ]
+            summary: 生成验证码
+            description: 根据配置的验证码类型或随机类型生成验证码。
+            responses:
+                '200':
+                    description: 成功，返回验证码信息
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                description: CaptchaResponse<ImageCaptchaVO>
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/captcha/verify:
+        post:
+            tags: [ Captcha ]
+            summary: 验证验证码
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CaptchaVerifyDto'
+            responses:
+                '200':
+                    description: 验证结果，成功时返回 validToken
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                description: cloud.tianai.captcha.common.response.ApiResponse
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    # ==========================================
+    # User
+    # ==========================================
+    # register
     /api/user/register:
         post:
             operationId: register
             summary: 用户注册
-            tags:
-                - User
+            tags: [ User ]
             requestBody:
                 required: true
                 content:
@@ -43,13 +99,12 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
 
-    # 登录
+    # login
     /api/user/login:
         post:
             operationId: login
             summary: 用户登录（支持用户名/邮箱/手机号）
-            tags:
-                - User
+            tags: [ User ]
             requestBody:
                 required: true
                 content:
@@ -64,13 +119,12 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
 
-    # 修改密码
+    # change password
     /api/user/password:
         put:
             operationId: updatePassword
             summary: 修改密码（需登录）
-            tags:
-                - User
+            tags: [ User ]
             security:
                 -   bearerAuth: [ ]
             requestBody:
@@ -87,13 +141,12 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
 
-    # 删除用户
+    # delete user
     /api/user/delete/{userId}:
         delete:
             operationId: deleteUser
             summary: 删除用户（管理员可删除所有用户，普通用户仅可删除自己）
-            tags:
-                - User
+            tags: [ User ]
             security:
                 -   bearerAuth: [ ]
             parameters:
@@ -110,13 +163,12 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
 
-    # 修改用户信息
+    # change user info
     /api/user/update/{userId}:
         put:
             operationId: updateUserInfo
             summary: 修改用户信息（普通用户仅可修改自己，管理员可修改所有用户）
-            tags:
-                - User
+            tags: [ User ]
             security:
                 -   bearerAuth: [ ]
             parameters:
@@ -138,67 +190,81 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
-
     # ==========================================
-    # [Admin] 节点管理 (Node)
+    # FTS
     # ==========================================
-    /api/fts/admin/node/list:
-        get:
-            tags: [ FTS-Admin-Node ]
-            summary: 获取节点列表
-            operationId: getAdminNodeList
-            security: [ { bearerAuth: [ ] } ]
-            parameters:
-                -   name: keyword
-                    in: query
-                    description: 搜索关键字(节点名称/IP)
-                    schema: { type: string }
-                -   name: page
-                    in: query
-                    schema: { type: integer, default: 1 }
-                -   name: size
-                    in: query
-                    schema: { type: integer, default: 20 }
-            responses:
-                '200':
-                    description: 成功
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ModelApiResponseFtsNodeList'
-
-    /api/fts/admin/node/create:
+    # --------------------
+    # User
+    # --------------------
+    /api/fts/user/list:
         post:
-            tags: [ FTS-Admin-Node ]
-            summary: 创建新节点
-            operationId: createNode
-            security: [ { bearerAuth: [ ] } ]
-            requestBody:
-                required: true
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/FtsNodeDto'
+            tags: [ FTS ]
+            summary: 获取用户列表
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
             responses:
                 '200':
-                    description: 创建成功
+                    description: 成功，data 通常为用户列表
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+    /api/fts/user/list/{userId}:
+        post:
+            tags: [ FTS ]
+            summary: 获取当前用户套餐信息
+            security:
+                -   bearerAuth: [ ]
+            responses:
+                '200':
+                    description: 成功，返回当前登录用户的套餐信息
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    /api/fts/admin/node/update:
-        put:
-            tags: [ FTS-Admin-Node ]
-            summary: 更新节点信息
-            operationId: updateNode
-            security: [ { bearerAuth: [ ] } ]
+    /api/fts/user/reset:
+        post:
+            tags: [ FTS ]
+            summary: 重置用户流量/信息
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
             requestBody:
                 required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/FtsNodeUpdateDto'
+                            $ref: '#/components/schemas/ResetFlowDto'
+            responses:
+                '200':
+                    description: 重置成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+
+    /api/fts/user/update:
+        post:
+            tags: [ FTS ]
+            summary: 更新用户信息
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/FTSUserUpdateDto'
             responses:
                 '200':
                     description: 更新成功
@@ -206,18 +272,71 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    /api/fts/admin/node/delete/{id}:
-        delete:
-            tags: [ FTS-Admin-Node ]
+    # --------------------
+    # Node
+    # --------------------
+    /api/fts/node/list:
+        post:
+            tags: [ FTS ]
+            summary: 获取节点列表
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
+            responses:
+                '200':
+                    description: 成功，返回节点列表
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/node/update:
+        post:
+            tags: [ FTS ]
+            summary: 更新节点信息
+            description: 需要管理员角色（@RequireRole）
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/NodeUpdateDto'
+            responses:
+                '200':
+                    description: 更新成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/node/delete:
+        post:
+            tags: [ FTS ]
             summary: 删除节点
-            operationId: deleteNode
-            security: [ { bearerAuth: [ ] } ]
-            parameters:
-                -   name: id
-                    in: path
-                    required: true
-                    schema: { type: integer, format: int64 }
+            description: 需要管理员角色（@RequireRole）
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                    format: int64
+                            required:
+                                - id
             responses:
                 '200':
                     description: 删除成功
@@ -225,263 +344,835 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    # ==========================================
-    # [Admin] 隧道管理 (Tunnel)
-    # ==========================================
-    /api/fts/admin/tunnel/list:
-        get:
-            tags: [ FTS-Admin-Tunnel ]
-            summary: 获取隧道列表
-            operationId: getAdminTunnelList
-            security: [ { bearerAuth: [ ] } ]
-            parameters:
-                -   name: keyword
-                    in: query
-                    schema: { type: string }
+    /api/fts/node/install:
+        post:
+            tags: [ FTS ]
+            summary: 获取节点安装命令
+            description: 需要管理员角色（@RequireRole）
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                    format: int64
+                            required:
+                                - id
             responses:
                 '200':
-                    description: 成功
+                    description: 成功，返回安装命令等信息
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ModelApiResponseFtsTunnelList'
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    /api/fts/admin/tunnel/create:
+    # --------------------
+    # Tunnel
+    # --------------------
+    /api/fts/tunnel/create:
         post:
-            tags: [ FTS-Admin-Tunnel ]
+            tags: [ FTS ]
             summary: 创建隧道
-            operationId: createTunnel
-            security: [ { bearerAuth: [ ] } ]
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
             requestBody:
                 required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/FtsTunnelDto'
+                            $ref: '#/components/schemas/TunnelDto'
             responses:
                 '200':
-                    description: 成功
+                    description: 创建成功
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    /api/fts/admin/tunnel/update:
-        put:
-            tags: [ FTS-Admin-Tunnel ]
-            summary: 更新隧道
-            operationId: updateTunnel
-            security: [ { bearerAuth: [ ] } ]
+    /api/fts/tunnel/list:
+        post:
+            tags: [ FTS ]
+            summary: 获取隧道列表
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
+            responses:
+                '200':
+                    description: 成功，返回隧道列表
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/tunnel/update:
+        post:
+            tags: [ FTS ]
+            summary: 更新隧道信息
+            description: 需要管理员角色（@RequireRole）
+            security:
+                - bearerAuth: []
             requestBody:
                 required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/FtsTunnelUpdateDto'
+                            $ref: '#/components/schemas/TunnelUpdateDto'
             responses:
                 '200':
-                    description: 成功
+                    description: 更新成功
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    /api/fts/admin/tunnel/delete/{id}:
-        delete:
-            tags: [ FTS-Admin-Tunnel ]
+    /api/fts/tunnel/delete:
+        post:
+            tags: [ FTS ]
             summary: 删除隧道
-            operationId: deleteTunnel
-            security: [ { bearerAuth: [ ] } ]
-            parameters:
-                -   name: id
-                    in: path
-                    required: true
-                    schema: { type: integer, format: int64 }
-            responses:
-                '200':
-                    description: 成功
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ModelApiResponse'
-
-    # 用户开通管理
-    /api/fts/admin/user/enable:
-        post:
-            tags: [ FTS-Admin-User ]
-            summary: 为用户开通/更新中转服务
-            operationId: enableFtsForUser
-            security: [ { bearerAuth: [ ] } ]
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
             requestBody:
                 required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/FtsEnableUserRequest'
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                    format: int64
+                            required:
+                                - id
             responses:
                 '200':
-                    description: 操作成功
+                    description: 删除成功
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    # ==========================================
-    # [Admin] 限速规则 (SpeedLimit)
-    # ==========================================
-    /api/fts/admin/speedlimit/list:
-        get:
-            tags: [ FTS-Admin-SpeedLimit ]
-            summary: 获取限速规则列表
-            operationId: getSpeedLimitList
-            security: [ { bearerAuth: [ ] } ]
+    /api/fts/tunnel/user/assign:
+        post:
+            tags: [ FTS ]
+            summary: 分配用户隧道权限
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UserTunnelDto'
             responses:
                 '200':
-                    description: 成功
+                    description: 分配成功
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ModelApiResponseFtsSpeedLimitList'
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    /api/fts/admin/speedlimit/create:
+    /api/fts/tunnel/user/list:
         post:
-            tags: [ FTS-Admin-SpeedLimit ]
+            tags: [ FTS ]
+            summary: 查询用户隧道权限列表
+            description: 需要管理员角色（@RequireRole）
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UserTunnelQueryDto'
+            responses:
+                '200':
+                    description: 成功，返回用户隧道权限列表
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/tunnel/user/remove:
+        post:
+            tags: [ FTS ]
+            summary: 删除用户隧道权限
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                    format: int32
+                            required:
+                                - id
+            responses:
+                '200':
+                    description: 删除成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/tunnel/user/update:
+        post:
+            tags: [ FTS ]
+            summary: 更新用户隧道权限
+            description: 包含流量、流量重置时间、到期时间、状态等；需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UserTunnelUpdateDto'
+            responses:
+                '200':
+                    description: 更新成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/tunnel/user/tunnel:
+        post:
+            tags: [ FTS ]
+            summary: 获取当前用户可用的隧道
+            security:
+                -   bearerAuth: [ ]
+            responses:
+                '200':
+                    description: 成功，返回当前用户可用隧道列表
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/tunnel/diagnose:
+        post:
+            tags: [ FTS ]
+            summary: 隧道诊断
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                tunnelId:
+                                    type: integer
+                                    format: int64
+                            required:
+                                - tunnelId
+            responses:
+                '200':
+                    description: 成功，返回诊断结果
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    # --------------------
+    # Forward
+    # --------------------
+    /api/fts/forward/create:
+        post:
+            tags: [ FTS ]
+            summary: 创建转发
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ForwardDto'
+            responses:
+                '200':
+                    description: 创建成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/forward/list:
+        post:
+            tags: [ FTS ]
+            summary: 获取转发列表
+            security:
+                -   bearerAuth: [ ]
+            responses:
+                '200':
+                    description: 成功，返回转发列表
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/forward/update:
+        post:
+            tags: [ FTS ]
+            summary: 更新转发
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ForwardUpdateDto'
+            responses:
+                '200':
+                    description: 更新成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/forward/delete:
+        post:
+            tags: [ FTS ]
+            summary: 删除转发
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                    format: int64
+                            required:
+                                - id
+            responses:
+                '200':
+                    description: 删除成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/forward/force-delete:
+        post:
+            tags: [ FTS ]
+            summary: 强制删除转发
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                    format: int64
+                            required:
+                                - id
+            responses:
+                '200':
+                    description: 强制删除成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/forward/pause:
+        post:
+            tags: [ FTS ]
+            summary: 暂停转发
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                    format: int64
+                            required:
+                                - id
+            responses:
+                '200':
+                    description: 暂停成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/forward/resume:
+        post:
+            tags: [ FTS ]
+            summary: 恢复转发
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                    format: int64
+                            required:
+                                - id
+            responses:
+                '200':
+                    description: 恢复成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/forward/diagnose:
+        post:
+            tags: [ FTS ]
+            summary: 转发诊断
+            security:
+                - bearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                forwardId:
+                                    type: integer
+                                    format: int64
+                            required:
+                                - forwardId
+            responses:
+                '200':
+                    description: 成功，返回诊断结果
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/forward/update-order:
+        post:
+            tags: [ FTS ]
+            summary: 更新转发排序
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            description: |
+                                参数中包含 forwards 数组，每个元素包含 id 与 inx
+            responses:
+                '200':
+                    description: 更新排序成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    # --------------------
+    # SpeedLimit
+    # --------------------
+    /api/fts/speed-limit/create:
+        post:
+            tags: [ FTS ]
             summary: 创建限速规则
-            operationId: createSpeedLimit
-            security: [ { bearerAuth: [ ] } ]
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
             requestBody:
                 required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/FtsSpeedLimitDto'
+                            $ref: '#/components/schemas/SpeedLimitDto'
             responses:
                 '200':
-                    description: 成功
+                    description: 创建成功
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    /api/fts/admin/speedlimit/delete/{id}:
-        delete:
-            tags: [ FTS-Admin-SpeedLimit ]
-            summary: 删除限速规则
-            operationId: deleteSpeedLimit
-            security: [ { bearerAuth: [ ] } ]
-            parameters:
-                -   name: id
-                    in: path
-                    required: true
-                    schema: { type: integer, format: int64 }
-            responses:
-                '200':
-                    description: 成功
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ModelApiResponse'
-
-    # ==========================================
-    # [User] 转发规则 (Forward)
-    # ==========================================
-    /api/fts/user/forward/list:
-        get:
-            tags: [ FTS-User-Forward ]
-            summary: 获取我的转发规则
-            operationId: getUserForwardList
-            security: [ { bearerAuth: [ ] } ]
-            parameters:
-                -   name: page
-                    in: query
-                    schema: { type: integer, default: 1 }
-                -   name: size
-                    in: query
-                    schema: { type: integer, default: 20 }
-            responses:
-                '200':
-                    description: 成功
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ModelApiResponseFtsForwardList'
-
-    /api/fts/user/forward/create:
+    /api/fts/speed-limit/list:
         post:
-            tags: [ FTS-User-Forward ]
-            summary: 创建转发规则
-            operationId: createForward
-            security: [ { bearerAuth: [ ] } ]
+            tags: [ FTS ]
+            summary: 获取限速规则列表
+            description: 需要管理员角色（@RequireRole）
+            security:
+                - bearerAuth: []
+            responses:
+                '200':
+                    description: 成功，返回限速规则列表
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/speed-limit/update:
+        post:
+            tags: [ FTS ]
+            summary: 更新限速规则
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
             requestBody:
                 required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/FtsForwardDto'
+                            $ref: '#/components/schemas/SpeedLimitUpdateDto'
             responses:
                 '200':
-                    description: 成功
+                    description: 更新成功
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    /api/fts/user/forward/update:
-        put:
-            tags: [ FTS-User-Forward ]
-            summary: 更新转发规则
-            operationId: updateForward
-            security: [ { bearerAuth: [ ] } ]
+    /api/fts/speed-limit/delete:
+        post:
+            tags: [ FTS ]
+            summary: 删除限速规则
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
             requestBody:
                 required: true
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/FtsForwardUpdateDto'
+                            type: object
+                            properties:
+                                id:
+                                    type: integer
+                                    format: int64
+                            required:
+                                - id
             responses:
                 '200':
-                    description: 成功
+                    description: 删除成功
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
 
-    /api/fts/user/forward/delete/{id}:
-        delete:
-            tags: [ FTS-User-Forward ]
-            summary: 删除转发规则
-            operationId: deleteForward
-            security: [ { bearerAuth: [ ] } ]
+    /api/fts/speed-limit/tunnels:
+        post:
+            tags: [ FTS ]
+            summary: 获取所有隧道（用于限速规则选择）
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
+            responses:
+                '200':
+                    description: 成功，返回隧道列表
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    # --------------------
+    # Config
+    # --------------------
+    /api/fts/config/list:
+        post:
+            tags: [ FTS ]
+            summary: 获取所有站点配置
+            description: 前端无需权限即可访问
+            responses:
+                '200':
+                    description: 成功，返回所有配置项
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/config/get:
+        post:
+            tags: [ FTS ]
+            summary: 根据配置名获取配置值
+            description: 前端无需权限即可访问
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                            required:
+                                - name
+            responses:
+                '200':
+                    description: 成功，返回对应配置值
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/config/update:
+        post:
+            tags: [ FTS ]
+            summary: 批量更新站点配置
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            additionalProperties:
+                                type: string
+            responses:
+                '200':
+                    description: 更新成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
+    /api/fts/config/update-single:
+        post:
+            tags: [ FTS ]
+            summary: 更新单个配置项
+            description: 需要管理员角色（@RequireRole）
+            security:
+                -   bearerAuth: [ ]
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                value:
+                                    type: string
+                            required:
+                                - name
+                                - value
+            responses:
+                '200':
+                    description: 更新成功
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ModelApiResponse'
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+    # --------------------
+    # Flow
+    # --------------------
+    /api/fts/flow/config:
+        post:
+            tags: [ FTS ]
+            summary: 节点上报 GOST 配置
+            description: |
+                节点通过该接口上报当前 GOST 配置。
+                请求体 rawData 可能是原始 JSON 或加密包裹结构（EncryptedMessage），通过 secret 进行解密。
             parameters:
-                -   name: id
-                    in: path
+                -   name: secret
+                    in: query
                     required: true
-                    schema: { type: integer, format: int64 }
+                    schema:
+                        type: string
+                    description: 节点密钥，用于鉴权与解密
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: string
+                            description: 原始数据字符串，可能为 GostConfigDto JSON 或 EncryptedMessage(JSON 包含 encrypted/data/timestamp)
             responses:
                 '200':
-                    description: 成功
+                    description: 始终返回 "ok" 字符串
                     content:
-                        application/json:
+                        text/plain:
                             schema:
-                                $ref: '#/components/schemas/ModelApiResponse'
+                                type: string
+                                example: ok
 
-    # ==========================================
-    # [User] 流量信息 (Flow)
-    # ==========================================
-    /api/fts/user/flow/info:
+    /api/fts/flow/test:
         get:
-            tags: [ FTS-User-Flow ]
-            summary: 获取用户流量包信息
-            operationId: getUserPackageInfo
-            security: [ { bearerAuth: [ ] } ]
+            tags: [ FTS ]
+            summary: 测试接口
             responses:
                 '200':
-                    description: 成功
+                    description: 返回 "test"
                     content:
-                        application/json:
+                        text/plain:
                             schema:
-                                $ref: '#/components/schemas/ModelApiResponse'
+                                type: string
+                                example: test
+
+    /api/fts/flow/upload:
+        post:
+            tags: [ FTS ]
+            summary: 节点上报流量数据
+            description: |
+                节点通过该接口上报流量统计数据。
+                rawData 可能为加密或未加密的 FlowDto JSON。
+            parameters:
+                - name: secret
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+                  description: 节点密钥，用于验证节点合法性
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: string
+                            description: 原始数据字符串，解析为 FlowDto 或加密结构
+            responses:
+                '200':
+                    description: 始终返回 "ok"
+                    content:
+                        text/plain:
+                            schema:
+                                type: string
+                                example: ok
+    # --------------------
+    # External
+    # --------------------
+    /api/fts/sub_store:
+        get:
+            tags: [ FTS ]
+            summary: 订阅信息查询（兼容外部格式）
+            description: |
+                对外开放的订阅流量查询接口。
+                验证 user/pwd，支持可选 tunnel 参数指定用户隧道。
+                校验通过后，会设置响应头 `subscription-userinfo`：
+                  upload={upload}; download={download}; total={total}; expire={expire}
+                同时返回 headerValue 字符串。
+            parameters:
+                -   name: user
+                    in: query
+                    required: true
+                    schema:
+                        type: string
+                -   name: pwd
+                    in: query
+                    required: true
+                    schema:
+                        type: string
+                -   name: tunnel
+                    in: query
+                    required: false
+                    schema:
+                        type: string
+                        default: "-1"
+            responses:
+                '200':
+                    description: 成功，返回 headerValue 字符串
+                    headers:
+                        subscription-userinfo:
+                            description: 订阅用户流量信息
+                            schema:
+                                type: string
+                    content:
+                        text/plain:
+                            schema:
+                                type: string
+                                example: upload=0; download=0; total=0; expire=0
+                '400':
+                    $ref: '#/components/schemas/ModelApiResponse'
+
 
 ## models ##
 components:
@@ -496,6 +1187,7 @@ components:
         # 通用API响应格式
         ModelApiResponse:
             type: object
+            description: 统一响应包装
             required:
                 - code
                 - msg
@@ -524,6 +1216,21 @@ components:
                     nullable: true
 
         # ----------------------------------------------------
+        # Captcha Data
+        # ----------------------------------------------------
+        CaptchaVerifyDto:
+            type: object
+            properties:
+                id:
+                    type: string
+                data:
+                    type: object
+                    description: 滑块/点击验证码轨迹数据（ImageCaptchaTrack）
+            required:
+                - id
+                - data
+
+        # ----------------------------------------------------
         # User Data
         # ----------------------------------------------------
         UserLoginDataResponse:
@@ -531,22 +1238,21 @@ components:
             properties:
                 userId:
                     type: integer
-                    description: 用户ID
+                    description: User ID
                     example: "436346"
                 userName:
                     type: string
-                    description: 用户名
+                    description: User Name
                     example: "test"
                 token:
                     type: string
-                    description: 用户登录凭证
+                    description: User Token
                     example: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1Zjli"
                 role:
                     type: string
-                    description: 用户角色
+                    description: User Role
                     example: "USER"
 
-        ## request
         UserRegisterRequest:
             type: object
             required:
@@ -589,12 +1295,15 @@ components:
                 - password
             properties:
                 account:
-                    type: string # 用户名/邮箱/手机号
+                    type: string # username/email/phone
                 password:
                     type: string
                     minLength: 6
                     maxLength: 20
                     format: password
+                captchaId:
+                    type: string
+                    nullable: true
 
         UpdatePasswordRequest:
             type: object
@@ -615,216 +1324,383 @@ components:
 
         UpdateUserInfoRequest:
             type: object
-            description: 修改用户信息请求
+            description: update user info
             properties:
                 userName:
                     type: string
                     maxLength: 100
-                    description: 用户名
+                    description: user name
                 displayName:
                     type: string
                     maxLength: 100
-                    description: 显示名称
+                    description: real name
                 email:
                     type: string
                     maxLength: 100
-                    description: 邮箱
+                    description: email
                 phone:
                     type: string
                     maxLength: 100
-                    description: 手机号
+                    description: phone number
                 occupation:
                     type: string
-                    description: 职业
+                    description: occupation
                 signature:
                     type: string
-                    description: 个性签名
+                    description: signature
 
         # ----------------------------------------------------
-        # Node DTOs (Source: NodeDto.java, Node.java)
+        # FTS Data
         # ----------------------------------------------------
-        FtsNodeDto:
-            type: object
-            required: [ name, serverIp, portSta, portEnd, secret ]
-            properties:
-                name: { type: string, description: "节点名称" }
-                ip: { type: string, description: "入口IP列表(逗号分隔)" }
-                serverIp: { type: string, description: "节点服务器真实IP" }
-                portSta: { type: integer, description: "起始端口" }
-                portEnd: { type: integer, description: "结束端口" }
-                secret: { type: string, description: "通信密钥" }
-                version: { type: string, description: "GOST版本" }
-                enableHttp: { type: integer, description: "1开启, 0关闭" }
-                enableTls: { type: integer, description: "1开启, 0关闭" }
-                enableSocks: { type: integer, description: "1开启, 0关闭" }
-
-        FtsNodeUpdateDto:
-            allOf:
-                -   $ref: '#/components/schemas/FtsNodeDto'
-                -   type: object
-                    required: [ id ]
-                    properties:
-                        id: { type: integer, format: int64 }
-
-        FtsNodeResponse:
-            allOf:
-                -   $ref: '#/components/schemas/FtsNodeUpdateDto'
-                -   type: object
-                    properties:
-                        status: { type: integer, description: "状态 1正常" }
-                        createdTime: { type: integer, format: int64 }
-                        updatedTime: { type: integer, format: int64 }
-
-        # ----------------------------------------------------
-        # Tunnel DTOs (Source: TunnelDto.java, Tunnel.java)
-        # ----------------------------------------------------
-        FtsTunnelDto:
-            type: object
-            required: [ name, inNodeId, outNodeId, type ]
-            properties:
-                name: { type: string }
-                inNodeId: { type: integer, format: int64, description: "入口节点ID" }
-                outNodeId: { type: integer, format: int64, description: "出口节点ID" }
-                type: { type: integer, description: "1:端口转发, 2:隧道转发" }
-                protocol: { type: string, default: "tls", description: "tls, ws, wss, etc." }
-                trafficRatio: { type: number, format: double, default: 1.0, description: "流量倍率" }
-                flow: { type: integer, description: "流量计算方式: 1上传, 2双向" }
-                tcpListenAddr: { type: string, default: "[::]", description: "TCP监听地址" }
-                udpListenAddr: { type: string, default: "[::]", description: "UDP监听地址" }
-                interfaceName: { type: string, description: "网卡接口名" }
-
-        FtsTunnelUpdateDto:
-            allOf:
-                -   $ref: '#/components/schemas/FtsTunnelDto'
-                -   type: object
-                    required: [ id ]
-                    properties:
-                        id: { type: integer, format: int64 }
-
-        FtsTunnelResponse:
-            allOf:
-                -   $ref: '#/components/schemas/FtsTunnelUpdateDto'
-                -   type: object
-                    properties:
-                        inIp: { type: string, description: "入口节点IP快照" }
-                        outIp: { type: string, description: "出口节点IP快照" }
-                        status: { type: integer }
-
-        # ----------------------------------------------------
-        # Forward DTOs (Source: ForwardDto.java, Forward.java)
-        # ----------------------------------------------------
-        FtsForwardDto:
-            type: object
-            required: [ tunnelId, inPort, remoteAddr ]
-            properties:
-                name: { type: string, description: "备注名" }
-                tunnelId: { type: integer, format: int64 }
-                inPort: { type: integer, description: "入口端口" }
-                outPort: { type: integer, description: "出口端口(可选)" }
-                remoteAddr: { type: string, description: "目标地址 IP:Port" }
-                strategy: { type: string, default: "fifo", description: "负载均衡策略" }
-                interfaceName: { type: string, description: "指定出口网卡" }
-
-        FtsForwardUpdateDto:
-            allOf:
-                -   $ref: '#/components/schemas/FtsForwardDto'
-                -   type: object
-                    required: [ id ]
-                    properties:
-                        id: { type: integer, format: int64 }
-
-        FtsForwardResponse:
-            allOf:
-                -   $ref: '#/components/schemas/FtsForwardUpdateDto'
-                -   type: object
-                    properties:
-                        inFlow: { type: integer, format: int64, description: "已用入站流量" }
-                        outFlow: { type: integer, format: int64, description: "已用出站流量" }
-                        status: { type: integer }
-                        userId: { type: integer, format: int64 }
-
-        # ----------------------------------------------------
-        # SpeedLimit DTOs (Source: SpeedLimitDto.java)
-        # ----------------------------------------------------
-        FtsSpeedLimitDto:
-            type: object
-            required: [ name, speed, tunnelId ]
-            properties:
-                name: { type: string }
-                speed: { type: integer, description: "限速值 MB/s" }
-                tunnelId: { type: integer, format: int64 }
-
-        FtsSpeedLimitResponse:
-            allOf:
-                -   $ref: '#/components/schemas/FtsSpeedLimitDto'
-                -   type: object
-                    properties:
-                        id: { type: integer, format: int64 }
-                        tunnelName: { type: string }
-
-        # ----------------------------------------------------
-        # User Info DTOs
-        # ----------------------------------------------------
-        FtsUserPackageInfo:
+        FTSUserUpdateDto:
             type: object
             properties:
-                userId: { type: integer, format: int64 }
-                flow: { type: integer, format: int64, description: "总流量配额" }
-                inFlow: { type: integer, format: int64 }
-                outFlow: { type: integer, format: int64 }
-                expTime: { type: integer, format: int64, description: "过期时间戳" }
-                num: { type: integer, description: "端口数量限制" }
-                flowResetTime: { type: integer, format: int64, description: "流量重置日" }
+                id:
+                    type: integer
+                    format: int64
+                flow:
+                    type: integer
+                    format: int64
+                num:
+                    type: integer
+                    format: int32
+                expTime:
+                    type: integer
+                    format: int64
+                flowResetTime:
+                    type: integer
+                    format: int64
+                status:
+                    type: integer
+                    format: int32
+            required:
+                - id
+                - flow
+                - num
+                - expTime
+                - flowResetTime
 
-        FtsEnableUserRequest:
+        ResetFlowDto:
             type: object
-            required: [ userId, flowQuota, expirationTime ]
             properties:
-                userId: { type: integer, format: int64 }
-                flowQuota: { type: integer, format: int64, description: "流量配额(Bytes)" }
-                maxRules: { type: integer, default: 5, description: "最大规则数" }
-                expirationTime: { type: string, description: "过期时间 (ISO-8601)" }
+                userId:
+                    type: integer
+                    format: int32
+                    description: user id
+                type:
+                    type: integer
+                    format: int32
+                    description: 重置类型
+            required:
+                - id
+                - type
 
-        # ----------------------------------------------------
-        # Generic Wrappers (ModelApiResponse)
-        # ----------------------------------------------------
-        ModelApiResponseFtsNodeList:
-            allOf:
-                -   $ref: '#/components/schemas/ModelApiResponse'
-                -   type: object
-                    properties:
-                        data:
-                            type: array
-                            items:
-                                $ref: '#/components/schemas/FtsNodeResponse'
+        NodeUpdateDto:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                name:
+                    type: string
+                ip:
+                    type: string
+                serverIp:
+                    type: string
+                portSta:
+                    type: integer
+                    format: int32
+                    minimum: 1
+                    maximum: 65535
+                portEnd:
+                    type: integer
+                    format: int32
+                    minimum: 1
+                    maximum: 65535
+                http:
+                    type: integer
+                    format: int32
+                    nullable: true
+                tls:
+                    type: integer
+                    format: int32
+                    nullable: true
+                socks:
+                    type: integer
+                    format: int32
+                    nullable: true
+            required:
+                - id
+                - name
+                - ip
+                - serverIp
+                - portSta
+                - portEnd
 
-        ModelApiResponseFtsTunnelList:
-            allOf:
-                -   $ref: '#/components/schemas/ModelApiResponse'
-                -   type: object
-                    properties:
-                        data:
-                            type: array
-                            items:
-                                $ref: '#/components/schemas/FtsTunnelResponse'
+        TunnelDto:
+            type: object
+            properties:
+                name:
+                    type: string
+                inNodeId:
+                    type: integer
+                    format: int64
+                outNodeId:
+                    type: integer
+                    format: int64
+                    nullable: true
+                    description: 可为空，type=1 时自动设置为 inNodeId
+                type:
+                    type: integer
+                    format: int32
+                    description: 隧道类型（1 端口转发，2 隧道转发）
+                flow:
+                    type: integer
+                    format: int32
+                    description: 流量计算类型（1 单向上行，2 双向）
+                trafficRatio:
+                    type: number
+                    format: double
+                    description: 流量倍率，(0, 100]
+                interfaceName:
+                    type: string
+                    nullable: true
+                protocol:
+                    type: string
+                    description: 协议类型，默认 tls
+                tcpListenAddr:
+                    type: string
+                    description: TCP 监听地址，默认 0.0.0.0
+                udpListenAddr:
+                    type: string
+                    description: UDP 监听地址，默认 0.0.0.0
+            required:
+                - name
+                - inNodeId
+                - type
+                - flow
+                - trafficRatio
 
-        ModelApiResponseFtsForwardList:
-            allOf:
-                -   $ref: '#/components/schemas/ModelApiResponse'
-                -   type: object
-                    properties:
-                        data:
-                            type: array
-                            items:
-                                $ref: '#/components/schemas/FtsForwardResponse'
+        TunnelUpdateDto:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                name:
+                    type: string
+                flow:
+                    type: integer
+                    format: int32
+                trafficRatio:
+                    type: number
+                    format: double
+                protocol:
+                    type: string
+                tcpListenAddr:
+                    type: string
+                udpListenAddr:
+                    type: string
+                interfaceName:
+                    type: string
+                    nullable: true
+            required:
+                - id
+                - name
+                - flow
+                - trafficRatio
+                - protocol
+                - tcpListenAddr
+                - udpListenAddr
 
-        ModelApiResponseFtsSpeedLimitList:
-            allOf:
-                -   $ref: '#/components/schemas/ModelApiResponse'
-                -   type: object
-                    properties:
-                        data:
-                            type: array
-                            items:
-                                $ref: '#/components/schemas/FtsSpeedLimitResponse'
+        UserTunnelDto:
+            type: object
+            properties:
+                userId:
+                    type: integer
+                    format: int32
+                tunnelId:
+                    type: integer
+                    format: int32
+                flow:
+                    type: integer
+                    format: int64
+                    description: 流量限制（单位：GB）
+                num:
+                    type: integer
+                    format: int32
+                    description: 转发数量限制
+                flowResetTime:
+                    type: integer
+                    format: int64
+                    description: 流量重置时间戳（毫秒）
+                expTime:
+                    type: integer
+                    format: int64
+                    description: 到期时间戳（毫秒）
+                speedId:
+                    type: integer
+                    format: int32
+                    nullable: true
+                    description: 限速规则 ID，可为空表示不限速
+            required:
+                - userId
+                - tunnelId
+                - flow
+                - num
+                - flowResetTime
+                - expTime
+
+        UserTunnelQueryDto:
+            type: object
+            properties:
+                userId:
+                    type: integer
+                    format: int32
+            required:
+                - userId
+
+        UserTunnelUpdateDto:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: int32
+                flow:
+                    type: integer
+                    format: int64
+                num:
+                    type: integer
+                    format: int32
+                flowResetTime:
+                    type: integer
+                    format: int64
+                expTime:
+                    type: integer
+                    format: int64
+                status:
+                    type: integer
+                    format: int32
+                speedId:
+                    type: integer
+                    format: int32
+                    nullable: true
+            required:
+                - id
+                - flow
+                - num
+                - flowResetTime
+                - expTime
+                - status
+
+        ForwardDto:
+            type: object
+            properties:
+                name:
+                    type: string
+                tunnelId:
+                    type: integer
+                    format: int32
+                remoteAddr:
+                    type: string
+                    description: 远程地址
+                strategy:
+                    type: string
+                    nullable: true
+                inPort:
+                    type: integer
+                    format: int32
+                    minimum: 1
+                    maximum: 65535
+                    nullable: true
+                    description: 可选，为空时自动分配
+                interfaceName:
+                    type: string
+                    nullable: true
+            required:
+                - name
+                - tunnelId
+                - remoteAddr
+
+        ForwardUpdateDto:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                userId:
+                    type: integer
+                    format: int32
+                name:
+                    type: string
+                tunnelId:
+                    type: integer
+                    format: int32
+                remoteAddr:
+                    type: string
+                strategy:
+                    type: string
+                    nullable: true
+                inPort:
+                    type: integer
+                    format: int32
+                    minimum: 1
+                    maximum: 65535
+                    nullable: true
+                interfaceName:
+                    type: string
+                    nullable: true
+            required:
+                - id
+                - userId
+                - name
+                - tunnelId
+                - remoteAddr
+
+        SpeedLimitDto:
+            type: object
+            properties:
+                name:
+                    type: string
+                speed:
+                    type: integer
+                    format: int32
+                    minimum: 1
+                tunnelId:
+                    type: integer
+                    format: int64
+                tunnelName:
+                    type: string
+            required:
+                - name
+                - speed
+                - tunnelId
+                - tunnelName
+
+        SpeedLimitUpdateDto:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    format: int64
+                name:
+                    type: string
+                speed:
+                    type: integer
+                    format: int32
+                    minimum: 1
+                tunnelId:
+                    type: integer
+                    format: int64
+                tunnelName:
+                    type: string
+            required:
+                - id
+                - name
+                - speed
+                - tunnelId
+                - tunnelName
+
+
+
 
