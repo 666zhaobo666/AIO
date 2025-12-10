@@ -35,7 +35,7 @@ public class CustomErrorController implements ErrorController {
         }
     }
 
-    private String generateErrorHtml(String statusCode, String title) {
+    private String generateErrorHtml(String statusCode, String title, String path) {
         return "<!DOCTYPE html>" +
             "<html lang='zh-CN'>" +
             "<head>" +
