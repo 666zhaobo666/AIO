@@ -29,15 +29,9 @@ paths:
                     content:
                         application/json:
                             schema:
-                                allOf:
-                                    -   $ref: '#/components/schemas/ModelApiResponse'
-                                    -   type: object
-                                        properties:
-                                            data:
-                                                type: integer
-                                                format: int32
+                                $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/captcha/generate:
         post:
@@ -50,10 +44,9 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: object
-                                description: CaptchaResponse<ImageCaptchaVO>
+                                $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/captcha/verify:
         post:
@@ -71,10 +64,9 @@ paths:
                     content:
                         application/json:
                             schema:
-                                type: object
-                                description: cloud.tianai.captcha.common.response.ApiResponse
+                                $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     # ==========================================
     # User
@@ -211,13 +203,20 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
     /api/fts/user/list/{userId}:
         post:
             tags: [ FTS ]
             summary: 获取当前用户套餐信息
             security:
                 -   bearerAuth: [ ]
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                      type: integer
+                      format: int32
             responses:
                 '200':
                     description: 成功，返回当前登录用户的套餐信息
@@ -226,7 +225,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/user/reset:
         post:
@@ -249,7 +248,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
 
     /api/fts/user/update:
@@ -273,7 +272,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     # --------------------
     # Node
@@ -293,7 +292,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/node/update:
         post:
@@ -316,7 +315,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/node/delete:
         post:
@@ -345,7 +344,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/node/install:
         post:
@@ -374,7 +373,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     # --------------------
     # Tunnel
@@ -400,7 +399,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/tunnel/list:
         post:
@@ -417,7 +416,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/tunnel/update:
         post:
@@ -440,7 +439,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/tunnel/delete:
         post:
@@ -469,7 +468,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/tunnel/user/assign:
         post:
@@ -492,7 +491,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/tunnel/user/list:
         post:
@@ -515,7 +514,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/tunnel/user/remove:
         post:
@@ -544,7 +543,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/tunnel/user/update:
         post:
@@ -567,7 +566,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/tunnel/user/tunnel:
         post:
@@ -583,7 +582,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/tunnel/diagnose:
         post:
@@ -612,7 +611,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     # --------------------
     # Forward
@@ -637,7 +636,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/forward/list:
         post:
@@ -653,7 +652,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/forward/update:
         post:
@@ -675,7 +674,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/forward/delete:
         post:
@@ -703,7 +702,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/forward/force-delete:
         post:
@@ -731,7 +730,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/forward/pause:
         post:
@@ -759,7 +758,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/forward/resume:
         post:
@@ -787,7 +786,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/forward/diagnose:
         post:
@@ -815,7 +814,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/forward/update-order:
         post:
@@ -839,7 +838,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     # --------------------
     # SpeedLimit
@@ -865,7 +864,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/speed-limit/list:
         post:
@@ -882,7 +881,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/speed-limit/update:
         post:
@@ -905,7 +904,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/speed-limit/delete:
         post:
@@ -934,7 +933,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/speed-limit/tunnels:
         post:
@@ -951,7 +950,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     # --------------------
     # Config
@@ -969,7 +968,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/config/get:
         post:
@@ -995,7 +994,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/config/update:
         post:
@@ -1020,7 +1019,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
     /api/fts/config/update-single:
         post:
@@ -1051,7 +1050,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ModelApiResponse'
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
     # --------------------
     # Flow
     # --------------------
@@ -1171,7 +1170,7 @@ paths:
                                 type: string
                                 example: upload=0; download=0; total=0; expire=0
                 '400':
-                    $ref: '#/components/schemas/ModelApiResponse'
+                    $ref: '#/components/responses/ErrorResponse'
 
 
 ## models ##
@@ -1181,6 +1180,14 @@ components:
             type: http
             scheme: bearer
             bearerFormat: JWT
+
+    responses:
+        ErrorResponse:
+            description: 统一错误响应
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/ModelApiResponse'
 
     schemas:
         ## response
